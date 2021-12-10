@@ -2240,7 +2240,7 @@ public class MIPSTranslator {
         return new DivMShL(m_high, sh_post, l);
     }
 
-    //取余数优化: 翻译为 a - a / b * b
+    //取余数优化: a % b 翻译为 a - a / b * b
     private void ModOptimize(String dreg, String op1reg, int d, boolean reverse) {
         if (reverse) {
             if (d == 0) {
@@ -2257,9 +2257,12 @@ public class MIPSTranslator {
                 add("li $" + dreg + ", 0");
 
             } else {
+                DivOptimize(dreg, op1reg, d, reverse);    //不能用"v1"当dreg！
+
                 add("li $v1, " + d);
-                add("div $" + op1reg + ", $v1");
-                add("mfhi $" + dreg);
+                add("mult $" + dreg + ", $v1");
+                add("mflo $v1");
+                add("sub $" + dreg + ", $" + op1reg + ", $v1");
             }
         }
     }
