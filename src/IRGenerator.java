@@ -900,6 +900,9 @@ public class IRGenerator {
         if (kind.equals("array") || kind.equals("const array")) {
             Symbol symbol = new Symbol(name, Parser.TYPE.I);
             symbol.setArray();
+            if (n.getType().equals("ConstDef")) {
+                symbol.setConst();
+            }
 
             Node dimen1 = ident.getLeft();
             int dimennum1 = dimen1.calcuValue();    //symbol计算的dimen1,2有隐患，尽量少用。【修复】可用

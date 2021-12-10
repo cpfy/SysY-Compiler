@@ -244,25 +244,32 @@ public class MIPSTranslator {
             //todo 判定有隐患
             if (oper1.isKindofsymbol()) {
                 Symbol oper1symbol = oper1.getSymbol();
-                if (innerfunc && !oper1symbol.isGlobal()) {    //函数内+symbol需要lw
-                    tmpregforop1 = register.applyTmpRegister();
-                    op1reg = register.getRegisterNameFromNo(tmpregforop1);
-                    op1registmp = true;
-
-                    loadWordOfInfuncVarFromSpToReg(oper1, op1reg);       //包装从函数体sp读取到reg过程
-
-                    //register.freeTmpRegister(tmpregforop1);
-                    // todo 有隐患，但理论上可以此时释放【答】不行，可能与oper2冲突。md，先不还了
-
-                } else if (oper1symbol.isGlobal() && oper1symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
-                    String globalvarname = oper1symbol.getName();
+                if (oper1symbol.getIsConst()) {
                     op1reg = searchRegName(oper1);
-                    add("lw $" + op1reg + ", Global_" + globalvarname);
+                    add("li $" + op1reg + ", " + oper1symbol.getNum());
 
                 } else {
-                    op1reg = searchRegName(oper1);
-                    loadWordOfLocalMainfuncVarSymbolFromSpToReg(op1reg, oper1symbol);
+                    if (innerfunc && !oper1symbol.isGlobal()) {    //函数内+symbol需要lw
+                        tmpregforop1 = register.applyTmpRegister();
+                        op1reg = register.getRegisterNameFromNo(tmpregforop1);
+                        op1registmp = true;
+
+                        loadWordOfInfuncVarFromSpToReg(oper1, op1reg);       //包装从函数体sp读取到reg过程
+
+                        //register.freeTmpRegister(tmpregforop1);
+                        // todo 有隐患，但理论上可以此时释放【答】不行，可能与oper2冲突。md，先不还了
+
+                    } else if (oper1symbol.isGlobal() && oper1symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
+                        String globalvarname = oper1symbol.getName();
+                        op1reg = searchRegName(oper1);
+                        add("lw $" + op1reg + ", Global_" + globalvarname);
+
+                    } else {
+                        op1reg = searchRegName(oper1);
+                        loadWordOfLocalMainfuncVarSymbolFromSpToReg(op1reg, oper1symbol);
+                    }
                 }
+
             } else {
                 op1reg = searchRegName(oper1);
             }
@@ -270,22 +277,29 @@ public class MIPSTranslator {
             //todo 判定有隐患
             if (oper2.isKindofsymbol()) {
                 Symbol oper2symbol = oper2.getSymbol();
-                if (innerfunc && !oper2symbol.isGlobal()) {    //函数内+symbol需要lw
-                    tmpregforop2 = register.applyTmpRegister();
-                    op2reg = register.getRegisterNameFromNo(tmpregforop2);
-                    op2registmp = true;
-
-                    loadWordOfInfuncVarFromSpToReg(oper2, op2reg);       //包装从函数体sp读取到reg过程
-
-                } else if (oper2symbol.isGlobal() && oper2symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
-                    String globalvarname = oper2symbol.getName();
+                if (oper2symbol.getIsConst()) {
                     op2reg = searchRegName(oper2);
-                    add("lw $" + op2reg + ", Global_" + globalvarname);
+                    add("li $" + op2reg + ", " + oper2symbol.getNum());
 
                 } else {
-                    op2reg = searchRegName(oper2);
-                    loadWordOfLocalMainfuncVarSymbolFromSpToReg(op2reg, oper2symbol);
+                    if (innerfunc && !oper2symbol.isGlobal()) {    //函数内+symbol需要lw
+                        tmpregforop2 = register.applyTmpRegister();
+                        op2reg = register.getRegisterNameFromNo(tmpregforop2);
+                        op2registmp = true;
+
+                        loadWordOfInfuncVarFromSpToReg(oper2, op2reg);       //包装从函数体sp读取到reg过程
+
+                    } else if (oper2symbol.isGlobal() && oper2symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
+                        String globalvarname = oper2symbol.getName();
+                        op2reg = searchRegName(oper2);
+                        add("lw $" + op2reg + ", Global_" + globalvarname);
+
+                    } else {
+                        op2reg = searchRegName(oper2);
+                        loadWordOfLocalMainfuncVarSymbolFromSpToReg(op2reg, oper2symbol);
+                    }
                 }
+
             } else {
                 op2reg = searchRegName(oper2);
             }
@@ -321,25 +335,32 @@ public class MIPSTranslator {
             //todo 判定有隐患
             if (oper1.isKindofsymbol()) {
                 Symbol oper1symbol = oper1.getSymbol();
-                if (innerfunc && !oper1symbol.isGlobal()) {    //函数内+symbol需要lw
-                    tmpregforop1 = register.applyTmpRegister();
-                    op1reg = register.getRegisterNameFromNo(tmpregforop1);
-                    op1registmp = true;
-
-                    loadWordOfInfuncVarFromSpToReg(oper1, op1reg);       //包装从函数体sp读取到reg过程
-
-                    //register.freeTmpRegister(tmpregforop1);
-                    // todo 有隐患，但理论上可以此时释放【答】不行，可能与oper2冲突。md，先不还了
-
-                } else if (oper1symbol.isGlobal() && oper1symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
-                    String globalvarname = oper1symbol.getName();
+                if (oper1symbol.getIsConst()) {
                     op1reg = searchRegName(oper1);
-                    add("lw $" + op1reg + ", Global_" + globalvarname);
+                    add("li $" + op1reg + ", " + oper1symbol.getNum());
 
                 } else {
-                    op1reg = searchRegName(oper1);
-                    loadWordOfLocalMainfuncVarSymbolFromSpToReg(op1reg, oper1symbol);
+                    if (innerfunc && !oper1symbol.isGlobal()) {    //函数内+symbol需要lw
+                        tmpregforop1 = register.applyTmpRegister();
+                        op1reg = register.getRegisterNameFromNo(tmpregforop1);
+                        op1registmp = true;
+
+                        loadWordOfInfuncVarFromSpToReg(oper1, op1reg);       //包装从函数体sp读取到reg过程
+
+                        //register.freeTmpRegister(tmpregforop1);
+                        // todo 有隐患，但理论上可以此时释放【答】不行，可能与oper2冲突。md，先不还了
+
+                    } else if (oper1symbol.isGlobal() && oper1symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
+                        String globalvarname = oper1symbol.getName();
+                        op1reg = searchRegName(oper1);
+                        add("lw $" + op1reg + ", Global_" + globalvarname);
+
+                    } else {
+                        op1reg = searchRegName(oper1);
+                        loadWordOfLocalMainfuncVarSymbolFromSpToReg(op1reg, oper1symbol);
+                    }
                 }
+
             } else {
                 op1reg = searchRegName(oper1);
             }
@@ -422,25 +443,32 @@ public class MIPSTranslator {
             //todo 判定有隐患
             if (oper1.isKindofsymbol()) {
                 Symbol oper1symbol = oper1.getSymbol();
-                if (innerfunc && !oper1symbol.isGlobal()) {    //函数内+symbol需要lw
-                    tmpregforop1 = register.applyTmpRegister();
-                    op1reg = register.getRegisterNameFromNo(tmpregforop1);
-                    op1registmp = true;
-
-                    loadWordOfInfuncVarFromSpToReg(oper1, op1reg);       //包装从函数体sp读取到reg过程
-
-                    //register.freeTmpRegister(tmpregforop1);
-                    // todo 有隐患，但理论上可以此时释放【答】不行，可能与oper2冲突。md，先不还了
-
-                } else if (oper1symbol.isGlobal() && oper1symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
-                    String globalvarname = oper1symbol.getName();
+                if (oper1symbol.getIsConst()) {
                     op1reg = searchRegName(oper1);
-                    add("lw $" + op1reg + ", Global_" + globalvarname);
+                    add("li $" + op1reg + ", " + oper1symbol.getNum());
 
                 } else {
-                    op1reg = searchRegName(oper1);
-                    loadWordOfLocalMainfuncVarSymbolFromSpToReg(op1reg, oper1symbol);
+                    if (innerfunc && !oper1symbol.isGlobal()) {    //函数内+symbol需要lw
+                        tmpregforop1 = register.applyTmpRegister();
+                        op1reg = register.getRegisterNameFromNo(tmpregforop1);
+                        op1registmp = true;
+
+                        loadWordOfInfuncVarFromSpToReg(oper1, op1reg);       //包装从函数体sp读取到reg过程
+
+                        //register.freeTmpRegister(tmpregforop1);
+                        // todo 有隐患，但理论上可以此时释放【答】不行，可能与oper2冲突。md，先不还了
+
+                    } else if (oper1symbol.isGlobal() && oper1symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
+                        String globalvarname = oper1symbol.getName();
+                        op1reg = searchRegName(oper1);
+                        add("lw $" + op1reg + ", Global_" + globalvarname);
+
+                    } else {
+                        op1reg = searchRegName(oper1);
+                        loadWordOfLocalMainfuncVarSymbolFromSpToReg(op1reg, oper1symbol);
+                    }
                 }
+
             } else {
                 op1reg = searchRegName(oper1);
             }
@@ -448,22 +476,29 @@ public class MIPSTranslator {
             //todo 判定有隐患
             if (oper2.isKindofsymbol()) {
                 Symbol oper2symbol = oper2.getSymbol();
-                if (innerfunc && !oper2symbol.isGlobal()) {    //函数内+symbol需要lw
-                    tmpregforop2 = register.applyTmpRegister();
-                    op2reg = register.getRegisterNameFromNo(tmpregforop2);
-                    op2registmp = true;
-
-                    loadWordOfInfuncVarFromSpToReg(oper2, op2reg);       //包装从函数体sp读取到reg过程
-
-                } else if (oper2symbol.isGlobal() && oper2symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
-                    String globalvarname = oper2symbol.getName();
+                if (oper2symbol.getIsConst()) {
                     op2reg = searchRegName(oper2);
-                    add("lw $" + op2reg + ", Global_" + globalvarname);
+                    add("li $" + op2reg + ", " + oper2symbol.getNum());
 
                 } else {
-                    op2reg = searchRegName(oper2);
-                    loadWordOfLocalMainfuncVarSymbolFromSpToReg(op2reg, oper2symbol);
+                    if (innerfunc && !oper2symbol.isGlobal()) {    //函数内+symbol需要lw
+                        tmpregforop2 = register.applyTmpRegister();
+                        op2reg = register.getRegisterNameFromNo(tmpregforop2);
+                        op2registmp = true;
+
+                        loadWordOfInfuncVarFromSpToReg(oper2, op2reg);       //包装从函数体sp读取到reg过程
+
+                    } else if (oper2symbol.isGlobal() && oper2symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
+                        String globalvarname = oper2symbol.getName();
+                        op2reg = searchRegName(oper2);
+                        add("lw $" + op2reg + ", Global_" + globalvarname);
+
+                    } else {
+                        op2reg = searchRegName(oper2);
+                        loadWordOfLocalMainfuncVarSymbolFromSpToReg(op2reg, oper2symbol);
+                    }
                 }
+
             } else {
                 op2reg = searchRegName(oper2);
             }
@@ -499,25 +534,32 @@ public class MIPSTranslator {
             //todo 判定有隐患
             if (oper1.isKindofsymbol()) {
                 Symbol oper1symbol = oper1.getSymbol();
-                if (innerfunc && !oper1symbol.isGlobal()) {    //函数内+symbol需要lw
-                    tmpregforop1 = register.applyTmpRegister();
-                    op1reg = register.getRegisterNameFromNo(tmpregforop1);
-                    op1registmp = true;
-
-                    loadWordOfInfuncVarFromSpToReg(oper1, op1reg);       //包装从函数体sp读取到reg过程
-
-                    //register.freeTmpRegister(tmpregforop1);
-                    // todo 有隐患，但理论上可以此时释放【答】不行，可能与oper2冲突。md，先不还了
-
-                } else if (oper1symbol.isGlobal() && oper1symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
-                    String globalvarname = oper1symbol.getName();
+                if (oper1symbol.getIsConst()) {
                     op1reg = searchRegName(oper1);
-                    add("lw $" + op1reg + ", Global_" + globalvarname);
+                    add("li $" + op1reg + ", " + oper1symbol.getNum());
 
                 } else {
-                    op1reg = searchRegName(oper1);
-                    loadWordOfLocalMainfuncVarSymbolFromSpToReg(op1reg, oper1symbol);
+                    if (innerfunc && !oper1symbol.isGlobal()) {    //函数内+symbol需要lw
+                        tmpregforop1 = register.applyTmpRegister();
+                        op1reg = register.getRegisterNameFromNo(tmpregforop1);
+                        op1registmp = true;
+
+                        loadWordOfInfuncVarFromSpToReg(oper1, op1reg);       //包装从函数体sp读取到reg过程
+
+                        //register.freeTmpRegister(tmpregforop1);
+                        // todo 有隐患，但理论上可以此时释放【答】不行，可能与oper2冲突。md，先不还了
+
+                    } else if (oper1symbol.isGlobal() && oper1symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
+                        String globalvarname = oper1symbol.getName();
+                        op1reg = searchRegName(oper1);
+                        add("lw $" + op1reg + ", Global_" + globalvarname);
+
+                    } else {
+                        op1reg = searchRegName(oper1);
+                        loadWordOfLocalMainfuncVarSymbolFromSpToReg(op1reg, oper1symbol);
+                    }
                 }
+
             } else {
                 op1reg = searchRegName(oper1);
             }
@@ -612,23 +654,31 @@ public class MIPSTranslator {
             //todo 判定有隐患
             if (printvar.isKindofsymbol()) {
                 Symbol printvarsymbol = printvar.getSymbol();
-                if (innerfunc && !printvarsymbol.isGlobal()) {    //函数内+symbol需要lw //todo 必须先判定，防止全局变量覆盖局部变量
+                if (printvarsymbol.getIsConst()) {
                     add("li $v0, 1");
-                    loadWordOfInfuncVarFromSpToReg(printvar, "a0");       //包装从函数体sp读取到reg
-                    add("syscall");
-
-                } else if (printvarsymbol.isGlobal() && printvarsymbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
-                    String globalvarname = printvarsymbol.getName();
-
-                    add("li $v0, 1");
-                    add("lw $a0" + ", Global_" + globalvarname);  //todo 也许不用加$zero
+                    add("li $a0, " + printvarsymbol.getNum());
                     add("syscall");
 
                 } else {
-                    add("li $v0, 1");
-                    loadWordOfLocalMainfuncVarSymbolFromSpToReg("a0", printvarsymbol);
-                    add("syscall");
+                    if (innerfunc && !printvarsymbol.isGlobal()) {    //函数内+symbol需要lw //todo 必须先判定，防止全局变量覆盖局部变量
+                        add("li $v0, 1");
+                        loadWordOfInfuncVarFromSpToReg(printvar, "a0");       //包装从函数体sp读取到reg
+                        add("syscall");
+
+                    } else if (printvarsymbol.isGlobal() && printvarsymbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
+                        String globalvarname = printvarsymbol.getName();
+
+                        add("li $v0, 1");
+                        add("lw $a0" + ", Global_" + globalvarname);  //todo 也许不用加$zero
+                        add("syscall");
+
+                    } else {
+                        add("li $v0, 1");
+                        loadWordOfLocalMainfuncVarSymbolFromSpToReg("a0", printvarsymbol);
+                        add("syscall");
+                    }
                 }
+
             } else {
                 String varregname = searchRegName(printvar); //todo 不用分类是否为symbol！searchregname函数处理了
 
@@ -654,7 +704,7 @@ public class MIPSTranslator {
         add("syscall");
 
         if (type.equals("var")) {     //读取到正常变量
-            if (getintvar.isKindofsymbol()) {
+            if (getintvar.isKindofsymbol()) {   //不优化
                 Symbol varsymbol = getintvar.getSymbol();
                 if (innerfunc && !varsymbol.isGlobal()) {    //函数内+symbol需要lw
                     saveWordOfInfuncVarFromRegToSp(getintvar, "v0");
@@ -804,7 +854,7 @@ public class MIPSTranslator {
 
         } else if (type.equals("var")) {
             //todo 判定有隐患?
-            if (var.isKindofsymbol()) {
+            if (var.isKindofsymbol()) { //不敢优化
                 Symbol varsymbol = var.getSymbol();
                 int tmpregno = register.applyTmpRegister();
                 String tmpregname = register.getRegisterNameFromNo(tmpregno);   //需要从sp中lw出来并sw
@@ -1006,25 +1056,32 @@ public class MIPSTranslator {
             //todo 判定有隐患
             if (oper1.isKindofsymbol()) {
                 Symbol oper1symbol = oper1.getSymbol();
-                if (innerfunc && !oper1symbol.isGlobal()) {    //函数内+symbol需要lw
-                    tmpregforop1 = register.applyTmpRegister();
-                    op1reg = register.getRegisterNameFromNo(tmpregforop1);
-                    op1registmp = true;
-
-                    loadWordOfInfuncVarFromSpToReg(oper1, op1reg);       //包装从函数体sp读取到reg过程
-
-                    //register.freeTmpRegister(tmpregforop1);
-                    // todo 有隐患，但理论上可以此时释放【答】不行，可能与oper2冲突。md，先不还了
-
-                } else if (oper1symbol.isGlobal() && oper1symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
-                    String globalvarname = oper1symbol.getName();
+                if (oper1symbol.getIsConst()) {
                     op1reg = searchRegName(oper1);
-                    add("lw $" + op1reg + ", Global_" + globalvarname);
+                    add("li $" + op1reg + ", " + oper1symbol.getNum());
 
                 } else {
-                    op1reg = searchRegName(oper1);
-                    loadWordOfLocalMainfuncVarSymbolFromSpToReg(op1reg, oper1symbol);
+                    if (innerfunc && !oper1symbol.isGlobal()) {    //函数内+symbol需要lw
+                        tmpregforop1 = register.applyTmpRegister();
+                        op1reg = register.getRegisterNameFromNo(tmpregforop1);
+                        op1registmp = true;
+
+                        loadWordOfInfuncVarFromSpToReg(oper1, op1reg);       //包装从函数体sp读取到reg过程
+
+                        //register.freeTmpRegister(tmpregforop1);
+                        // todo 有隐患，但理论上可以此时释放【答】不行，可能与oper2冲突。md，先不还了
+
+                    } else if (oper1symbol.isGlobal() && oper1symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
+                        String globalvarname = oper1symbol.getName();
+                        op1reg = searchRegName(oper1);
+                        add("lw $" + op1reg + ", Global_" + globalvarname);
+
+                    } else {
+                        op1reg = searchRegName(oper1);
+                        loadWordOfLocalMainfuncVarSymbolFromSpToReg(op1reg, oper1symbol);
+                    }
                 }
+
             } else {
                 op1reg = searchRegName(oper1);
             }
@@ -1032,22 +1089,29 @@ public class MIPSTranslator {
             //todo 判定有隐患
             if (oper2.isKindofsymbol()) {
                 Symbol oper2symbol = oper2.getSymbol();
-                if (innerfunc && !oper2symbol.isGlobal()) {    //函数内+symbol需要lw
-                    tmpregforop2 = register.applyTmpRegister();
-                    op2reg = register.getRegisterNameFromNo(tmpregforop2);
-                    op2registmp = true;
-
-                    loadWordOfInfuncVarFromSpToReg(oper2, op2reg);       //包装从函数体sp读取到reg过程
-
-                } else if (oper2symbol.isGlobal() && oper2symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
-                    String globalvarname = oper2symbol.getName();
+                if (oper2symbol.getIsConst()) {
                     op2reg = searchRegName(oper2);
-                    add("lw $" + op2reg + ", Global_" + globalvarname);
+                    add("li $" + op2reg + ", " + oper2symbol.getNum());
 
                 } else {
-                    op2reg = searchRegName(oper2);
-                    loadWordOfLocalMainfuncVarSymbolFromSpToReg(op2reg, oper2symbol);
+                    if (innerfunc && !oper2symbol.isGlobal()) {    //函数内+symbol需要lw
+                        tmpregforop2 = register.applyTmpRegister();
+                        op2reg = register.getRegisterNameFromNo(tmpregforop2);
+                        op2registmp = true;
+
+                        loadWordOfInfuncVarFromSpToReg(oper2, op2reg);       //包装从函数体sp读取到reg过程
+
+                    } else if (oper2symbol.isGlobal() && oper2symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
+                        String globalvarname = oper2symbol.getName();
+                        op2reg = searchRegName(oper2);
+                        add("lw $" + op2reg + ", Global_" + globalvarname);
+
+                    } else {
+                        op2reg = searchRegName(oper2);
+                        loadWordOfLocalMainfuncVarSymbolFromSpToReg(op2reg, oper2symbol);
+                    }
                 }
+
             } else {
                 op2reg = searchRegName(oper2);
             }
@@ -1106,25 +1170,32 @@ public class MIPSTranslator {
             //todo 判定有隐患
             if (oper1.isKindofsymbol()) {
                 Symbol oper1symbol = oper1.getSymbol();
-                if (innerfunc && !oper1symbol.isGlobal()) {    //函数内+symbol需要lw
-                    tmpregforop1 = register.applyTmpRegister();
-                    op1reg = register.getRegisterNameFromNo(tmpregforop1);
-                    op1registmp = true;
-
-                    loadWordOfInfuncVarFromSpToReg(oper1, op1reg);       //包装从函数体sp读取到reg过程
-
-                    //register.freeTmpRegister(tmpregforop1);
-                    // todo 有隐患，但理论上可以此时释放【答】不行，可能与oper2冲突。md，先不还了
-
-                } else if (oper1symbol.isGlobal() && oper1symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
-                    String globalvarname = oper1symbol.getName();
+                if (oper1symbol.getIsConst()) {
                     op1reg = searchRegName(oper1);
-                    add("lw $" + op1reg + ", Global_" + globalvarname);
+                    add("li $" + op1reg + ", " + oper1symbol.getNum());
 
                 } else {
-                    op1reg = searchRegName(oper1);
-                    loadWordOfLocalMainfuncVarSymbolFromSpToReg(op1reg, oper1symbol);
+                    if (innerfunc && !oper1symbol.isGlobal()) {    //函数内+symbol需要lw
+                        tmpregforop1 = register.applyTmpRegister();
+                        op1reg = register.getRegisterNameFromNo(tmpregforop1);
+                        op1registmp = true;
+
+                        loadWordOfInfuncVarFromSpToReg(oper1, op1reg);       //包装从函数体sp读取到reg过程
+
+                        //register.freeTmpRegister(tmpregforop1);
+                        // todo 有隐患，但理论上可以此时释放【答】不行，可能与oper2冲突。md，先不还了
+
+                    } else if (oper1symbol.isGlobal() && oper1symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
+                        String globalvarname = oper1symbol.getName();
+                        op1reg = searchRegName(oper1);
+                        add("lw $" + op1reg + ", Global_" + globalvarname);
+
+                    } else {
+                        op1reg = searchRegName(oper1);
+                        loadWordOfLocalMainfuncVarSymbolFromSpToReg(op1reg, oper1symbol);
+                    }
                 }
+
             } else {
                 op1reg = searchRegName(oper1);
             }
@@ -1205,58 +1276,85 @@ public class MIPSTranslator {
             Variable offset = oper1.getVar();
             String offsetType = offset.getType();
 
-            if (symbol_oper1.isGlobal()) {    //全局取data段
-                int tmpregno = register.applyTmpRegister();
-                String tmpregname = register.getRegisterNameFromNo(tmpregno);   //申请临时寄存器
+            if (symbol_oper1.getIsConst() && offsetType.equals("num")) {  //优化，直接取符号表
+                int index = offset.getNum();
+                int num = symbol_oper1.arrayList.get(index);
+                add("li $" + regForOper1 + ", " + num);
+            } else {
+                if (symbol_oper1.isGlobal()) {    //全局取data段
+                    int tmpregno = register.applyTmpRegister();
+                    String tmpregname = register.getRegisterNameFromNo(tmpregno);   //申请临时寄存器
 
-                if (offsetType.equals("num")) {    //offset = 数字
-                    add("li $" + tmpregname + ", " + offset.getNum() * 4);    //！！！需要乘以4，省一步sll
-                    add("lw $" + regForOper1 + ", Global_" + arrayname + "($" + tmpregname + ")");
+                    if (offsetType.equals("num")) {    //offset = 数字
+                        add("li $" + tmpregname + ", " + offset.getNum() * 4);    //！！！需要乘以4，省一步sll
+                        add("lw $" + regForOper1 + ", Global_" + arrayname + "($" + tmpregname + ")");
 
-                } else {    //offset = var变量
-                    String offsetregname = loadWordOfAnyVariableToRegName(offset);   //todo 存疑
-                    add("sll $" + offsetregname + ", $" + offsetregname + ", 2");   //！！！需要乘以4
-                    add("lw $" + regForOper1 + ", Global_" + arrayname + "($" + offsetregname + ")");
-                }
+                    } else {    //offset = var变量
+                        String offsetregname = loadWordOfAnyVariableToRegName(offset);   //todo 存疑
+                        add("sll $" + offsetregname + ", $" + offsetregname + ", 2");   //！！！需要乘以4
+                        add("lw $" + regForOper1 + ", Global_" + arrayname + "($" + offsetregname + ")");
+                    }
 
-                register.freeTmpRegister(tmpregno);
-                //register.freeRegister(offset);
+                    register.freeTmpRegister(tmpregno);
+                    //register.freeRegister(offset);
 
-            } else {    //局部取 堆栈。此处还要细分是否在函数体内的情况，地址计算不同
-                if (innerfunc) {  //array数组在函数内
-                    if (curFunc.varnameIsFuncPara(arrayname)) {     //函数参数为数组时处理
-                        int tmpregno = register.applyTmpRegister();
-                        int tmpregno2 = register.applyTmpRegister();
-                        String tmpregname = register.getRegisterNameFromNo(tmpregno);   //申请临时寄存器
-                        String tmpregname2 = register.getRegisterNameFromNo(tmpregno2);   //申请临时寄存器
+                } else {    //局部取 堆栈。此处还要细分是否在函数体内的情况，地址计算不同
+                    if (innerfunc) {  //array数组在函数内
+                        if (curFunc.varnameIsFuncPara(arrayname)) {     //函数参数为数组时处理
+                            int tmpregno = register.applyTmpRegister();
+                            int tmpregno2 = register.applyTmpRegister();
+                            String tmpregname = register.getRegisterNameFromNo(tmpregno);   //申请临时寄存器
+                            String tmpregname2 = register.getRegisterNameFromNo(tmpregno2);   //申请临时寄存器
 
-                        int arraybaseaddroffset = calcuFuncParaOffset(arrayname);
-                        add("lw $" + tmpregname + ", " + arraybaseaddroffset + "($sp)");  //取出存放array的基地址,存到tmpregname中
+                            int arraybaseaddroffset = calcuFuncParaOffset(arrayname);
+                            add("lw $" + tmpregname + ", " + arraybaseaddroffset + "($sp)");  //取出存放array的基地址,存到tmpregname中
 
-                        if (offsetType.equals("num")) {    //offset = 数字
-                            int numaddroffset = offset.getNum() * 4;    //乘以4，省一步li或sll
-                            add("lw $" + regForOper1 + ", " + numaddroffset + "($" + tmpregname + ")");
+                            if (offsetType.equals("num")) {    //offset = 数字
+                                int numaddroffset = offset.getNum() * 4;    //乘以4，省一步li或sll
+                                add("lw $" + regForOper1 + ", " + numaddroffset + "($" + tmpregname + ")");
 
-                        } else {    //offset = var变量
-                            String offsetregname = loadWordOfAnyVariableToRegName(offset);   //todo 存疑
-                            add("sll $" + tmpregname2 + ", $" + offsetregname + ", 2");
-                            add("add $" + tmpregname + ", $" + tmpregname + ", $" + tmpregname2);
-                            add("lw $" + regForOper1 + ", ($" + tmpregname + ")");
+                            } else {    //offset = var变量
+                                String offsetregname = loadWordOfAnyVariableToRegName(offset);   //todo 存疑
+                                add("sll $" + tmpregname2 + ", $" + offsetregname + ", 2");
+                                add("add $" + tmpregname + ", $" + tmpregname + ", $" + tmpregname2);
+                                add("lw $" + regForOper1 + ", ($" + tmpregname + ")");
+                            }
+
+                            register.freeTmpRegister(tmpregno);
+                            register.freeTmpRegister(tmpregno2);
+                            //register.freeRegister(offset); 下面统一释放
+
+                        } else {     //函数内 + 局部数组
+                            Symbol symbol = SymbolTable.lookupLocalTable(arrayname, Parser.TYPE.I, symbol_oper1.getScope());
+                            Assert.check(symbol, "MIPSTranslator / adAssign2() / oper1 / array / innerfunc");
+
+                            int localarrayspoffset = calcuFuncLocalVarOffset(symbol);   //局部array的首地址
+                            if (offsetType.equals("num")) {    //offset = 数字
+                                int numaddroffset = offset.getNum() * 4;    //乘以4，省一步li或sll
+                                localarrayspoffset += numaddroffset;
+                                add("lw $" + regForOper1 + ", " + localarrayspoffset + "($sp)");
+
+                            } else {    //offset = var变量
+                                int tmpregno = register.applyTmpRegister();
+                                String tmpregname = register.getRegisterNameFromNo(tmpregno);   //申请临时寄存器
+
+                                String offsetregname = loadWordOfAnyVariableToRegName(offset);   //todo 存疑
+                                add("sll $" + tmpregname + ", $" + offsetregname + ", 2");
+                                add("add $" + tmpregname + ", $" + tmpregname + ", $sp");
+                                add("lw $" + regForOper1 + ", " + localarrayspoffset + "($" + tmpregname + ")");
+
+                                register.freeTmpRegister(tmpregno);
+                            }
                         }
 
-                        register.freeTmpRegister(tmpregno);
-                        register.freeTmpRegister(tmpregno2);
-                        //register.freeRegister(offset); 下面统一释放
+                    } else {  //array数组在正常结构内
+                        int arraybaseaddr = symbol_oper1.spBaseHex + symbol_oper1.addrOffsetDec;
 
-                    } else {     //函数内 + 局部数组
-                        Symbol symbol = SymbolTable.lookupLocalTable(arrayname, Parser.TYPE.I, symbol_oper1.getScope());
-                        Assert.check(symbol, "MIPSTranslator / adAssign2() / oper1 / array / innerfunc");
-
-                        int localarrayspoffset = calcuFuncLocalVarOffset(symbol);   //局部array的首地址
                         if (offsetType.equals("num")) {    //offset = 数字
-                            int numaddroffset = offset.getNum() * 4;    //乘以4，省一步li或sll
-                            localarrayspoffset += numaddroffset;
-                            add("lw $" + regForOper1 + ", " + localarrayspoffset + "($sp)");
+                            int arraynumaddr = arraybaseaddr + offset.getNum() * 4;
+                            String arroffsetHex = convertIntAddrToHex(arraynumaddr);   //地址格式int转16进制
+
+                            add("lw $" + regForOper1 + ", " + arroffsetHex);
 
                         } else {    //offset = var变量
                             int tmpregno = register.applyTmpRegister();
@@ -1264,31 +1362,10 @@ public class MIPSTranslator {
 
                             String offsetregname = loadWordOfAnyVariableToRegName(offset);   //todo 存疑
                             add("sll $" + tmpregname + ", $" + offsetregname + ", 2");
-                            add("add $" + tmpregname + ", $" + tmpregname + ", $sp");
-                            add("lw $" + regForOper1 + ", " + localarrayspoffset + "($" + tmpregname + ")");
+                            add("lw $" + regForOper1 + ", " + arraybaseaddr + "($" + tmpregname + ")");
 
                             register.freeTmpRegister(tmpregno);
                         }
-                    }
-
-                } else {  //array数组在正常结构内
-                    int arraybaseaddr = symbol_oper1.spBaseHex + symbol_oper1.addrOffsetDec;
-
-                    if (offsetType.equals("num")) {    //offset = 数字
-                        int arraynumaddr = arraybaseaddr + offset.getNum() * 4;
-                        String arroffsetHex = convertIntAddrToHex(arraynumaddr);   //地址格式int转16进制
-
-                        add("lw $" + regForOper1 + ", " + arroffsetHex);
-
-                    } else {    //offset = var变量
-                        int tmpregno = register.applyTmpRegister();
-                        String tmpregname = register.getRegisterNameFromNo(tmpregno);   //申请临时寄存器
-
-                        String offsetregname = loadWordOfAnyVariableToRegName(offset);   //todo 存疑
-                        add("sll $" + tmpregname + ", $" + offsetregname + ", 2");
-                        add("lw $" + regForOper1 + ", " + arraybaseaddr + "($" + tmpregname + ")");
-
-                        register.freeTmpRegister(tmpregno);
                     }
                 }
             }
@@ -1302,18 +1379,24 @@ public class MIPSTranslator {
             //todo 判定有隐患
             if (oper1.isKindofsymbol()) {
                 Symbol oper1symbol = oper1.getSymbol();
-                if (innerfunc && !oper1.getSymbol().isGlobal()) {    //函数内+symbol需要lw
-                    loadWordOfInfuncVarFromSpToReg(oper1, regForOper1);
-
-                } else if (oper1symbol.isGlobal() && oper1symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
-                    String globalvarname = oper1.getSymbol().getName();
-                    add("lw $" + regForOper1 + ", Global_" + globalvarname);  //todo 也许不用加$zero
+                if (oper1symbol.getIsConst()) {
+                    add("li $" + regForOper1 + ", " + oper1symbol.getNum());
 
                 } else {
-                    //System.err.println("MIPSTranslator addAssign2(): ??? unknown type = " + typeOper1);
-                    //什么也不用管 regForoper1处理好了
-                    loadWordOfLocalMainfuncVarSymbolFromSpToReg(regForOper1, oper1symbol);
+                    if (innerfunc && !oper1.getSymbol().isGlobal()) {    //函数内+symbol需要lw
+                        loadWordOfInfuncVarFromSpToReg(oper1, regForOper1);
+
+                    } else if (oper1symbol.isGlobal() && oper1symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
+                        String globalvarname = oper1.getSymbol().getName();
+                        add("lw $" + regForOper1 + ", Global_" + globalvarname);  //todo 也许不用加$zero
+
+                    } else {
+                        //System.err.println("MIPSTranslator addAssign2(): ??? unknown type = " + typeOper1);
+                        //什么也不用管 regForoper1处理好了
+                        loadWordOfLocalMainfuncVarSymbolFromSpToReg(regForOper1, oper1symbol);
+                    }
                 }
+
             } else {
                 //什么也不用管 regForoper1处理好了
             }
@@ -1435,7 +1518,7 @@ public class MIPSTranslator {
             String regForDest = searchRegName(dest);
             add("move $" + regForDest + ", $" + regForOper1);   //全局变量存此寄存器，后续释放可能有问题
 
-            if (dest.isKindofsymbol()) {
+            if (dest.isKindofsymbol()) {    //不优化
                 Symbol destsymbol = dest.getSymbol();
                 if (innerfunc && !dest.getSymbol().isGlobal()) {    //函数内+symbol需要lw
                     saveWordOfInfuncVarFromRegToSp(dest, regForOper1);       //包装从函数体sp读取到reg过程
@@ -1466,7 +1549,7 @@ public class MIPSTranslator {
         String name = dest.getName();
 
         //todo 判定有隐患
-        if (dest.isKindofsymbol()) {
+        if (dest.isKindofsymbol()) {    //不优化
             Symbol destsymbol = dest.getSymbol();
             if (innerfunc && !destsymbol.isGlobal()) {    //函数内+symbol需要lw
                 System.out.println(code.getRawstr() + "      assign ret infunc name = " + name);
@@ -1685,16 +1768,22 @@ public class MIPSTranslator {
         } else if (type.equals("var")) {    //todo 可能global情况
             if (var.isKindofsymbol()) {
                 Symbol varsymbol = var.getSymbol();
-                if (innerfunc && !varsymbol.isGlobal()) {    //函数内+symbol需要lw
-                    loadWordOfInfuncVarFromSpToReg(var, "v0");
-
-                } else if (varsymbol.isGlobal() && varsymbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
-                    String globalvarname = varsymbol.getName();
-                    add("lw $v0, Global_" + globalvarname);  //不用加$zero
+                if (varsymbol.getIsConst()) {
+                    add("li $v0, " + varsymbol.getNum());
 
                 } else {
-                    loadWordOfLocalMainfuncVarSymbolFromSpToReg("v0", varsymbol);//似乎仅Main函数return 0有此情况
+                    if (innerfunc && !varsymbol.isGlobal()) {    //函数内+symbol需要lw
+                        loadWordOfInfuncVarFromSpToReg(var, "v0");
+
+                    } else if (varsymbol.isGlobal() && varsymbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
+                        String globalvarname = varsymbol.getName();
+                        add("lw $v0, Global_" + globalvarname);  //不用加$zero
+
+                    } else {
+                        loadWordOfLocalMainfuncVarSymbolFromSpToReg("v0", varsymbol);//似乎仅Main函数return 0有此情况
+                    }
                 }
+
             } else {
                 String varregname = searchRegName(var);
                 add("move $v0, $" + varregname);
@@ -1860,23 +1949,30 @@ public class MIPSTranslator {
 
         if (oper0.isKindofsymbol()) {       //todo 判定、分类有隐患?
             Symbol oper0symbol = oper0.getSymbol();
-            if (innerfunc && !oper0symbol.isGlobal()) {    //函数内+symbol需要lw
-                int tmpregforop0 = register.applyTmpRegister();
-                op0reg = register.getRegisterNameFromNo(tmpregforop0);
-
-                loadWordOfInfuncVarFromSpToReg(oper0, op0reg);       //包装从函数体sp读取到reg过程
-
-                register.freeTmpRegister(tmpregforop0);
-
-            } else if (oper0symbol.isGlobal() && oper0symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
-                String globalvarname = oper0symbol.getName();
+            if (oper0symbol.getIsConst()) {
                 op0reg = searchRegName(oper0);
-                add("lw $" + op0reg + ", Global_" + globalvarname);
+                add("li $" + op0reg + ", " + oper0symbol.getNum());
 
             } else {
-                op0reg = searchRegName(oper0);
-                loadWordOfLocalMainfuncVarSymbolFromSpToReg(op0reg, oper0symbol);
+                if (innerfunc && !oper0symbol.isGlobal()) {    //函数内+symbol需要lw
+                    int tmpregforop0 = register.applyTmpRegister();
+                    op0reg = register.getRegisterNameFromNo(tmpregforop0);
+
+                    loadWordOfInfuncVarFromSpToReg(oper0, op0reg);       //包装从函数体sp读取到reg过程
+
+                    register.freeTmpRegister(tmpregforop0);
+
+                } else if (oper0symbol.isGlobal() && oper0symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
+                    String globalvarname = oper0symbol.getName();
+                    op0reg = searchRegName(oper0);
+                    add("lw $" + op0reg + ", Global_" + globalvarname);
+
+                } else {
+                    op0reg = searchRegName(oper0);
+                    loadWordOfLocalMainfuncVarSymbolFromSpToReg(op0reg, oper0symbol);
+                }
             }
+
         } else {
             op0reg = searchRegName(oper0);
         }
@@ -2083,24 +2179,31 @@ public class MIPSTranslator {
 
         if (oper0.isKindofsymbol()) {       //todo 判定、分类有隐患?
             Symbol oper0symbol = oper0.getSymbol();
-            if (innerfunc && !oper0symbol.isGlobal()) {    //函数内+symbol需要lw
-                int tmpregforop0 = register.applyTmpRegister();
-                op0reg = register.getRegisterNameFromNo(tmpregforop0);
-
-                loadWordOfInfuncVarFromSpToReg(oper0, op0reg, 1, pushinstrs);       //包装从函数体sp读取到reg过程
-
-                //register.freeTmpRegister(tmpregforop0);
-                //todo tmpregforop0没放
-
-            } else if (oper0symbol.isGlobal() && oper0symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
-                String globalvarname = oper0symbol.getName();
+            if (oper0symbol.getIsConst()) {
                 op0reg = searchRegName(oper0);
-                pushinstrs.addInstr(new Instr("lw $" + op0reg + ", Global_" + globalvarname));
+                pushinstrs.addInstr(new Instr("li $" + op0reg + ", " + oper0symbol.getNum()));
 
             } else {
-                op0reg = searchRegName(oper0);
-                loadWordOfLocalMainfuncVarSymbolFromSpToReg(op0reg, oper0symbol, 1, pushinstrs);
+                if (innerfunc && !oper0symbol.isGlobal()) {    //函数内+symbol需要lw
+                    int tmpregforop0 = register.applyTmpRegister();
+                    op0reg = register.getRegisterNameFromNo(tmpregforop0);
+
+                    loadWordOfInfuncVarFromSpToReg(oper0, op0reg, 1, pushinstrs);       //包装从函数体sp读取到reg过程
+
+                    //register.freeTmpRegister(tmpregforop0);
+                    //todo tmpregforop0没放
+
+                } else if (oper0symbol.isGlobal() && oper0symbol.getType() != Parser.TYPE.F) {  //还要判断不是func返回值
+                    String globalvarname = oper0symbol.getName();
+                    op0reg = searchRegName(oper0);
+                    pushinstrs.addInstr(new Instr("lw $" + op0reg + ", Global_" + globalvarname));
+
+                } else {
+                    op0reg = searchRegName(oper0);
+                    loadWordOfLocalMainfuncVarSymbolFromSpToReg(op0reg, oper0symbol, 1, pushinstrs);
+                }
             }
+
         } else {
             op0reg = searchRegName(oper0);
         }
