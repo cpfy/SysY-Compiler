@@ -584,7 +584,7 @@ public class IRGenerator {
         if (type.equals("==") || type.equals("!=")) {
             Variable lefteq = parseEqExp(n.getLeft());
             Variable righteq = parseEqExp(n.getRight());
-            Variable tmpvar = new Variable("var", getTmpVar());
+            Variable tmpvar = getTmpVar();
 
             if (type.equals("==")) {  //需要sne和seq
                 createIRCode("setcmp", "seq", tmpvar, lefteq, righteq);
@@ -603,7 +603,7 @@ public class IRGenerator {
         if (type.equals(">") || type.equals("<") || type.equals(">=") || type.equals("<=")) {
             Variable leftrel = parseRelExp(n.getLeft());
             Variable rightrel = parseRelExp(n.getRight());
-            Variable tmpvar = new Variable("var", getTmpVar());
+            Variable tmpvar = getTmpVar();
 
             switch (type) {
                 case ">=":  //<时branch
@@ -691,11 +691,19 @@ public class IRGenerator {
                     }
                     // return "-" + parseExp(n.getLeft());
                     //todo 也许更好的方法
-                    Variable tmpvar = new Variable("var", getTmpVar());
+
                     Variable leftexp = new Variable("num", 0);
                     Variable rightexp = parseExp(n.getLeft());
-                    createIRCode("assign", "-", tmpvar, leftexp, rightexp);
-                    return tmpvar;
+
+                    if (rightexp.getType().equals("num")) {
+                        return new Variable("num", -rightexp.getNum());
+
+                    } else {
+                        Variable tmpvar = getTmpVar();
+                        createIRCode("assign", "-", tmpvar, leftexp, rightexp);
+                        return tmpvar;
+                    }
+
                 case "*":
                     return generateOperatorIR(n, "*");
                 case "/":
@@ -708,7 +716,7 @@ public class IRGenerator {
             }
         } else if (type.equals("!")) {
             Variable nexp = parseExp(n.getLeft());
-            Variable tmpvar = new Variable("var", getTmpVar());
+            Variable tmpvar = getTmpVar();
             createIRCode("setcmp", "seq", tmpvar, nexp, new Variable("num", 0));    //seq tmpvar等于0置1
             return tmpvar;
 
@@ -745,15 +753,28 @@ public class IRGenerator {
         String kind = n.getKind();
 
         if (kind.equals("int") || kind.equals("const int")) {   //todo !!!!!!!md const int也是这类
-            Variable intvar = new Variable("var", n.getName());
-            intvar.setiskindofsymbolTrue();     //在parseIdent内独立设置
-            return intvar;
+            if (kind.equals("const int")) {     //优化
+                String name = n.getName();
+                Symbol symbol = SymbolTable.lookupFullTable(name, Parser.TYPE.I, SymbolTable.headerScope);
+                int num = symbol.getNum();
+                return new Variable("num", num);
+
+            } else {
+                Variable intvar = new Variable("var", n.getName());
+                intvar.setiskindofsymbolTrue();     //在parseIdent内独立设置
+                return intvar;
+            }
 
         } else if (kind.equals("array") || kind.equals("const array")) {    //todo !!!!!!!md const array也是这类
-            Variable name_and_index = parseArrayVisit(n);
-            Variable tmpvar = new Variable("var", getTmpVar());
-            createIRCode("assign2", tmpvar, name_and_index);
-            return tmpvar;
+            if (kind.equals("const array")) {
+                return parseConstArrayVisit(n);
+
+            } else {
+                Variable name_and_index = parseArrayVisit(n);
+                Variable tmpvar = getTmpVar();
+                createIRCode("assign2", tmpvar, name_and_index);
+                return tmpvar;
+            }
 
         } else if (kind.equals("func")) {   //left = paras
             String funcname = n.getName();
@@ -784,7 +805,7 @@ public class IRGenerator {
             ir4init(ir);
 
             if (func.getFuncReturnType() != null && func.getFuncReturnType() != Parser.TYPE.V) {
-                Variable tmpvar = new Variable("var", getTmpVar());
+                Variable tmpvar = getTmpVar();
                 createIRCode("assign_ret", tmpvar);
                 return tmpvar;
             }
@@ -835,18 +856,92 @@ public class IRGenerator {
         if (array.getArrayDimen() == 2) {   //二维数组处理成一维如a[t1]
             int arraydimen2 = array.getDimen2();
 
-            Variable tmpvar1 = new Variable("var", getTmpVar());
             Variable var_x = parseExp(n.getLeft());
             Variable var_arraydimen2 = new Variable("num", arraydimen2);
-            createIRCode("assign", "*", tmpvar1, var_x, var_arraydimen2);
-
-            Variable tmpvar2 = new Variable("var", getTmpVar());
             Variable var_y = parseExp(n.getRight());
-            createIRCode("assign", "+", tmpvar2, var_y, tmpvar1);
 
-            Variable retVar = new Variable("array", name, tmpvar2);
-            retVar.setSymbol(array);    //只设置symbol，但不可kindofSymbol=True
+            if (var_x.getType().equals("num")) {
+                if (var_y.getType().equals("num")) {
+                    int offsetnum = var_x.getNum() * arraydimen2 + var_y.getNum();
+                    Variable offset = new Variable("num", offsetnum);
+                    Variable retVar = new Variable("array", name, offset);
+                    retVar.setSymbol(array);    //只设置symbol，但不可kindofSymbol=True
+                    return retVar;
+
+                } else {
+                    int t1num = var_x.getNum() * arraydimen2;
+                    Variable t1 = new Variable("num", t1num);
+                    Variable offset = getTmpVar();
+                    createIRCode("assign", "+", offset, var_y, t1);
+                    Variable retVar = new Variable("array", name, offset);
+                    retVar.setSymbol(array);    //只设置symbol，但不可kindofSymbol=True
+                    return retVar;
+                }
+
+            } else {
+                Variable tmpvar1 = getTmpVar();
+                createIRCode("assign", "*", tmpvar1, var_x, var_arraydimen2);
+
+                Variable offset = getTmpVar();
+
+                createIRCode("assign", "+", offset, var_y, tmpvar1);
+
+                Variable retVar = new Variable("array", name, offset);
+                retVar.setSymbol(array);    //只设置symbol，但不可kindofSymbol=True
+                return retVar;
+            }
+
+        } else {    //一维数组正常访问
+            Variable var_x = parseExp(ident.getLeft());
+            Variable retVar = new Variable("array", name, var_x);
+            retVar.setSymbol(array);
             return retVar;
+        }
+    }
+
+    //常量直接取array num
+    private Variable parseConstArrayVisit(Node n) {
+        Node ident = n;
+        String name = ident.getName();   //指id
+
+        Symbol array = SymbolTable.lookupFullTable(name, Parser.TYPE.I, SymbolTable.headerScope);
+        Assert.check(array, "IRGenerator / parseArrayVisit()");
+
+        if (array.getArrayDimen() == 2) {   //二维数组处理成一维如a[t1]
+            int arraydimen2 = array.getDimen2();
+
+            Variable var_x = parseExp(n.getLeft());
+            Variable var_arraydimen2 = new Variable("num", arraydimen2);
+            Variable var_y = parseExp(n.getRight());
+
+            if (var_x.getType().equals("num")) {
+                if (var_y.getType().equals("num")) {
+                    int offsetnum = var_x.getNum() * arraydimen2 + var_y.getNum();
+                    int arrayvalue = array.arrayList.get(offsetnum);
+                    return new Variable("num", arrayvalue);
+
+                } else {
+                    int t1num = var_x.getNum() * arraydimen2;
+                    Variable t1 = new Variable("num", t1num);
+                    Variable offset = getTmpVar();
+                    createIRCode("assign", "+", offset, var_y, t1);
+                    Variable retVar = new Variable("array", name, offset);
+                    retVar.setSymbol(array);    //只设置symbol，但不可kindofSymbol=True
+                    return retVar;
+                }
+
+            } else {
+                Variable tmpvar1 = getTmpVar();
+                createIRCode("assign", "*", tmpvar1, var_x, var_arraydimen2);
+
+                Variable offset = getTmpVar();
+
+                createIRCode("assign", "+", offset, var_y, tmpvar1);
+
+                Variable retVar = new Variable("array", name, offset);
+                retVar.setSymbol(array);    //只设置symbol，但不可kindofSymbol=True
+                return retVar;
+            }
 
         } else {    //一维数组正常访问
             Variable var_x = parseExp(ident.getLeft());
@@ -945,7 +1040,7 @@ public class IRGenerator {
             //【加入初始化】const的类型会用到。此处ConstInivial可立即计算初值，Inivial需计算表达式
 
             Node init = n.getRight();
-            if (init != null &&(kind.equals("const int") || global)) {
+            if (init != null && (kind.equals("const int") || global)) {
                 int constinitnum = init.calcuValue();
                 symbol.setNum(constinitnum);
             }
@@ -955,7 +1050,6 @@ public class IRGenerator {
         }
     }
 
-
     //包装global/scope/rawstr/irList.add()
     private void ir4init(IRCode ir) {
         ir.setGlobal(global);
@@ -964,17 +1058,41 @@ public class IRGenerator {
         irList.add(ir);
     }
 
-    private String getTmpVar() {
+    private Variable getTmpVar() {
         varcount += 1;
-        return "t" + varcount;
+        String name = "t" + varcount;
+        Variable var = new Variable("var", name);
+        var.scope = SymbolTable.headerScope;
+        return var;
     }
 
     private Variable generateOperatorIR(Node n, String op) {
-        Variable tmpvar = new Variable("var", getTmpVar());
         Variable leftexp = parseExp(n.getLeft());
         Variable rightexp = parseExp(n.getRight());
-        //String irstr = tmpvar + " = " + leftexp + " " + op + " " + rightexp;
-        createIRCode("assign", op, tmpvar, leftexp, rightexp);
-        return tmpvar;
+
+        if (leftexp.getType().equals("num") && rightexp.getType().equals("num")) {
+            int leftnum = leftexp.getNum();
+            int rightnum = rightexp.getNum();
+
+            switch (op) {
+                case "+":
+                    return new Variable("num", leftnum + rightnum);
+                case "-":
+                    return new Variable("num", leftnum - rightnum);
+                case "*":
+                    return new Variable("num", leftnum * rightnum);
+                case "/":
+                    return new Variable("num", leftnum / rightnum);
+                case "%":
+                    return new Variable("num", leftnum % rightnum);
+                default:
+                    System.err.println("IRGenerator / generateOperatorIR what op type??");
+                    return null;
+            }
+        } else {
+            Variable tmpvar = getTmpVar();
+            createIRCode("assign", op, tmpvar, leftexp, rightexp);
+            return tmpvar;
+        }
     }
 }

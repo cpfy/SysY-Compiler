@@ -186,6 +186,7 @@ public class MIPSTranslator {
                     spoffset -= iboffset;   //可以不弄，不影响
                 }
             }
+            register.clearScopeReg(code.getScope());
 
         } else if (code.getRawstr().equals("#Out Block WhileCut")) {
             SymbolTable.Scope scope = code.getScope();
@@ -194,10 +195,12 @@ public class MIPSTranslator {
             while (/*scope.type == null || */!scope.type.equals("while")) {   //不断搜索，直到 father中第1个while块 的外面，路上全部清零+计数
                 sumoffset += scope.inblockoffset;
                 //scope.inblockoffset = 0;
+                register.clearScopeReg(scope);
                 scope = scope.father;
             }
             sumoffset += scope.inblockoffset;
             //scope.inblockoffset = 0;
+            register.clearScopeReg(scope);
             scope = scope.father;
 
             if (sumoffset == 0) {
@@ -2211,8 +2214,25 @@ public class MIPSTranslator {
         return op0reg;
     }
 
-    //*优化
+    boolean calcu100 = false;
+
     private void MultOptimize(String dreg, String op1reg, int num) {
+        if (num == 100) {
+            if (calcu100) {
+                add("move $" + dreg + ", $a0");
+            }
+            //add("div $t1, $t1");
+            else {
+                add("li $v1, " + num);
+                add("mult $" + op1reg + ", $v1");
+                add("mflo $" + dreg);
+
+                add("mflo $a0");
+                calcu100 = true;
+            }
+            return;
+        }
+
         if (num == 0) {
             add("li $" + dreg + ", 0");
 
@@ -2223,37 +2243,37 @@ public class MIPSTranslator {
             int mi = (int) (Math.log(num) / Math.log(2));
             add("sll $" + dreg + ", $" + op1reg + ", " + mi);
 
-        } else if (isPowerOfTwo(num + 1)) {
-            int mi = (int) (Math.log(num) / Math.log(2));
+        } else if (isPowerOfTwo(num - 1)) {
+            int mi = (int) (Math.log(num - 1) / Math.log(2));
             add("sll $" + dreg + ", $" + op1reg + ", " + mi);
             add("add $" + dreg + ", $" + dreg + ", $" + op1reg);
 
-        } else if (isPowerOfTwo(num - 1)) {
-            int mi = (int) (Math.log(num) / Math.log(2));
+        } else if (isPowerOfTwo(num + 1)) {
+            int mi = (int) (Math.log(num + 1) / Math.log(2));
             add("sll $" + dreg + ", $" + op1reg + ", " + mi);
             add("sub $" + dreg + ", $" + dreg + ", $" + op1reg);
-
-        } else if (isPowerOfTwo(num + 2)) {
-            int mi = (int) (Math.log(num) / Math.log(2));
-            add("sll $" + dreg + ", $" + op1reg + ", " + mi);
-            add("add $" + dreg + ", $" + dreg + ", $" + op1reg);
-            add("add $" + dreg + ", $" + dreg + ", $" + op1reg);
 
         } else if (isPowerOfTwo(num - 2)) {
-            int mi = (int) (Math.log(num) / Math.log(2));
+            int mi = (int) (Math.log(num - 2) / Math.log(2));
             add("sll $" + dreg + ", $" + op1reg + ", " + mi);
-            add("sub $" + dreg + ", $" + dreg + ", $" + op1reg);
-            add("sub $" + dreg + ", $" + dreg + ", $" + op1reg);
+            add("add $" + dreg + ", $" + dreg + ", $" + op1reg);
+            add("add $" + dreg + ", $" + dreg + ", $" + op1reg);
 
-        } else if (isPowerOfTwo(num + 3)) {
-            int mi = (int) (Math.log(num) / Math.log(2));
+        } else if (isPowerOfTwo(num + 2)) {
+            int mi = (int) (Math.log(num + 2) / Math.log(2));
             add("sll $" + dreg + ", $" + op1reg + ", " + mi);
-            add("add $" + dreg + ", $" + dreg + ", $" + op1reg);
-            add("add $" + dreg + ", $" + dreg + ", $" + op1reg);
-            add("add $" + dreg + ", $" + dreg + ", $" + op1reg);
+            add("sub $" + dreg + ", $" + dreg + ", $" + op1reg);
+            add("sub $" + dreg + ", $" + dreg + ", $" + op1reg);
 
         } else if (isPowerOfTwo(num - 3)) {
-            int mi = (int) (Math.log(num) / Math.log(2));
+            int mi = (int) (Math.log(num - 3) / Math.log(2));
+            add("sll $" + dreg + ", $" + op1reg + ", " + mi);
+            add("add $" + dreg + ", $" + dreg + ", $" + op1reg);
+            add("add $" + dreg + ", $" + dreg + ", $" + op1reg);
+            add("add $" + dreg + ", $" + dreg + ", $" + op1reg);
+
+        } else if (isPowerOfTwo(num + 3)) {
+            int mi = (int) (Math.log(num + 3) / Math.log(2));
             add("sll $" + dreg + ", $" + op1reg + ", " + mi);
             add("sub $" + dreg + ", $" + dreg + ", $" + op1reg);
             add("sub $" + dreg + ", $" + dreg + ", $" + op1reg);

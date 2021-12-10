@@ -11,6 +11,8 @@ public class Variable {
 
     private boolean usageInBlock;   //Block中的后续还会继续使用？
 
+    public SymbolTable.Scope scope;
+
     //一般var， 传参时array也用了这个
     public Variable(String type, String name) {
         this.type = type;

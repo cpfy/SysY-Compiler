@@ -238,4 +238,20 @@ public class Register {
 
         initFreeRegList();
     }
+
+    public void clearScopeReg(SymbolTable.Scope scope) {
+        ArrayList<Integer> list = new ArrayList<>();
+        for (int no : activeRegList) {
+            list.add(no);
+        }
+        for (int no : list) {
+            if (varAllocMap.get(no) != null) {
+                Variable occupyVar = varAllocMap.get(no);
+                if (occupyVar.scope == scope) {
+                    freeRegister(occupyVar);
+                }
+                System.out.println("BlockOut Free $" + no);
+            }
+        }
+    }
 }
