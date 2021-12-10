@@ -1,0 +1,5 @@
+*.txt
+*.zip
+*.iml
+.idea/*
+*.xlsx
