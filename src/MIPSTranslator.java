@@ -1151,13 +1151,7 @@ public class MIPSTranslator {
                     DivOptimize(dreg, op1reg, num, reverse);
                     break;
                 case "%":
-                    add("li $v1, " + num);
-                    if (reverse) {
-                        add("div $v1, $" + op1reg);
-                    } else {
-                        add("div $" + op1reg + ", $v1");
-                    }
-                    add("mfhi $" + dreg);
+                    ModOptimize(dreg, op1reg, num, reverse);
                     break;
             }
             /*register.freeRegister(oper1);*/
@@ -2169,29 +2163,106 @@ public class MIPSTranslator {
         }
     }
 
-    //除法优化
-    private void DivOptimize(String dreg, String op1reg, int num, boolean reverse) {
-        if (reverse) {  //num÷x
-            if (num == 0) {
-                add("li $" + dreg + ", 0");
-            } else {
-                add("li $v1, " + num);
-                add("div $v1, $" + op1reg);
-                add("mflo $" + dreg);
-            }
-
-        } else {    //x÷num
-            if (num == 1) {
-                add("move $" + dreg + ", $" + op1reg);
-            }
-            add("li $v1, " + num);
-            add("div $" + op1reg + ", $v1");
-            add("mflo $" + dreg);
-        }
-    }
-
     //判断是否2的幂次
     private boolean isPowerOfTwo(int n) {
         return n > 0 && (n & (n - 1)) == 0;
     }
+
+    //除法优化
+    private void DivOptimize(String dreg, String op1reg, int d, boolean reverse) {
+        /* add("li $v1, " + num);
+        add("div $" + op1reg + ", $v1");
+        add("mflo $" + dreg);*/ //除法？狗都不用？
+
+        if (reverse) {  //d÷x
+            if (d == 0) {
+                add("li $" + dreg + ", 0");
+            } else {
+                add("li $v1, " + d);
+                add("div $v1, $" + op1reg);
+                add("mflo $" + dreg);
+            }
+
+        } else {    //x÷d
+            DivMShL msl = ChooseMultiplier(Math.abs(d), 31);
+            long m = msl.m_high;
+            int sh_post = msl.sh_post;
+
+            if (Math.abs(d) == 1) {
+                add("move $" + dreg + ", $" + op1reg);
+
+            } else if (isPowerOfTwo(Math.abs(d))) {
+                int mi = (int) (Math.log(d) / Math.log(2));
+                add("sra $" + dreg + ", $" + op1reg + ", " + (mi - 1));
+                add("srl $" + dreg + ", $" + dreg + ", " + (32 - mi));
+                add("add $" + dreg + ", $" + dreg + ", $" + op1reg);
+                add("sra $" + dreg + ", $" + dreg + ", " + mi);
+
+            } else if (m < Math.pow(2, 31)) {  // q = SRA(MULSH(m, n), shpost) − XSIGN(n)
+                add("li $v1, " + m);
+                add("mult $" + op1reg + ", $v1");
+                add("mfhi $" + dreg);
+                add("sra $" + dreg + ", $" + dreg + ", " + sh_post);
+
+                add("slti $v1, $" + op1reg + ", 0");    //若x<0, v1 = 1
+                add("add $" + dreg + ", $" + dreg + ", $v1");
+
+            } else {    //q = SRA(n + MULSH(m − 2^N, n), shpost) − XSIGN(n)
+                add("li $v1, " + (int) (m - Math.pow(2, 32)));
+                add("mult $" + op1reg + ", $v1");
+                add("mfhi $" + dreg);
+                add("add $" + dreg + ", $" + dreg + ", $" + op1reg);
+                add("sra $" + dreg + ", $" + dreg + ", " + sh_post);
+
+                add("slti $v1, $" + op1reg + ", 0");    //若x<0, v1 = 1
+                add("add $" + dreg + ", $" + dreg + ", $v1");
+            }
+
+            if (d < 0) {
+                add("sub $" + dreg + ", $zero, $" + dreg);
+            }
+        }
+    }
+
+    private DivMShL ChooseMultiplier(int d, int prec /*=31*/) {
+        final int N = 32;
+        int l = (int) Math.ceil(Math.log(d) / Math.log(2));
+        int sh_post = l;
+        long m_low = (long) Math.floor(Math.pow(2, N + l) / d);
+        long m_high = (long) Math.floor((Math.pow(2, N + l) + Math.pow(2, N + l - prec)) / d);
+
+        while ((Math.floor(m_low / 2) < Math.floor(m_high / 2)) && sh_post > 0) {
+            m_low = (long) Math.floor(m_low / 2);
+            m_high = (long) Math.floor(m_high / 2);
+            sh_post -= 1;
+        }
+
+        return new DivMShL(m_high, sh_post, l);
+    }
+
+    //取余数优化: 翻译为 a - a / b * b
+    private void ModOptimize(String dreg, String op1reg, int d, boolean reverse) {
+        if (reverse) {
+            if (d == 0) {
+                add("li $" + dreg + ", 0");
+
+            } else {
+                add("li $v1, " + d);
+                add("div $v1, $" + op1reg);
+                add("mfhi $" + dreg);
+            }
+
+        } else {
+            if (d == 1) {
+                add("li $" + dreg + ", 0");
+
+            } else {
+                add("li $v1, " + d);
+                add("div $" + op1reg + ", $v1");
+                add("mfhi $" + dreg);
+            }
+        }
+    }
+
+
 }
