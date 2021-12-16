@@ -30,6 +30,10 @@ public class IRCode {
     private String instr;   //branch跳转 的bne等类型
     private String jumploc; //branch的跳转位置
 
+    //优化
+    public boolean deleted = false;
+    public int startindex = -1;
+
     //public boolean processjump = false;     //True表示jump时需处理inblockoffset,仅当break、continue时使用
 
     //todo 分类包括：note,label

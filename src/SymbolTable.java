@@ -11,6 +11,9 @@ public class SymbolTable {
         ArrayList<Scope> innerScopeList = new ArrayList<>();    //子block的list
         int innercnt = 0;   //计数当前访问到第几个子块，mips用
         String type;    //Block种类：while(主要用到), if, else, main, func, void(空白块)
+
+        //优化
+        int startindex = -1;
     }
 
     public static Scope headerScope = new Scope();

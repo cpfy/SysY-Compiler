@@ -24,6 +24,9 @@ public class IRGenerator {
         this.tree = ASTtree;
     }
 
+    //优化，一串赋值code的起始位置
+    private int startindex = 0;
+
     public ArrayList<IRCode> generate(int IRoutput) {
         parseTree();
 
@@ -95,6 +98,8 @@ public class IRGenerator {
             parseArrayDef(n);
 
         } else {    //此处ConstInivial可立即计算初值，Inivial需计算表达式
+            symbol.setIrindex(irList.size());
+
             if (init != null) {
                 if (kind.equals("const int") || global) {
                     int constinitnum = init.calcuValue();
@@ -111,6 +116,8 @@ public class IRGenerator {
                     ir4init(numInitIr);
 
                     //第2条，赋值
+                    startindex = irList.size();     //初始化ir赋值语句起始位置
+
                     Variable intinitvar = parseExp(init);
                     Variable intInitLval = new Variable("var", name);
 
@@ -173,6 +180,7 @@ public class IRGenerator {
 
             } else {    //Inivial需计算表达式。采用生成N条IRCode的处理
                 //第1条，声明
+                startindex = irList.size();     //初始化ir赋值语句起始位置
                 arrayir.init = false;
                 ir4init(arrayir);
 
@@ -427,6 +435,7 @@ public class IRGenerator {
                 createIRCode("getint", getintexp);
                 break;
             case "Assign_value":
+                startindex = irList.size();     //初始化ir赋值语句起始位置
                 Variable lval = parseLVal(n.getLeft()); //todo 本质上就是parseIdent？【答】不一样，如不需要出临时变量t2
                 Variable exp = parseExp(n.getRight());
                 createIRCode("assign2", lval, exp);
@@ -492,12 +501,16 @@ public class IRGenerator {
         String endlabel = "end_loop" + localwhilecount;
         String intoblocklabel = "into_loop" + localwhilecount;      //主要用于 || 中间判断成立直接跳入
 
+        int whilestartindex = irList.size();
+
         createIRCode("label", beginlabel + ":");
 
         parseCond(n.getLeft(), endlabel, intoblocklabel);
 
         //进入基本块
         SymbolTable.openScope("while");
+        SymbolTable.headerScope.startindex = whilestartindex;
+
         noneedopenblock = true;
         createIRCode("label", intoblocklabel + ":");
         parseStmt(n.getRight(), localwhilecount);
@@ -770,6 +783,7 @@ public class IRGenerator {
                 return parseConstArrayVisit(n);
 
             } else {
+                startindex = irList.size();     //初始化ir赋值语句起始位置
                 Variable name_and_index = parseArrayVisit(n);
                 Variable tmpvar = getTmpVar();
                 createIRCode("assign2", tmpvar, name_and_index);
@@ -1055,6 +1069,10 @@ public class IRGenerator {
         ir.setGlobal(global);
         ir.setScope(SymbolTable.headerScope);
         ir.concatRawstr();
+
+        //new
+        ir.startindex = startindex;
+
         irList.add(ir);
     }
 

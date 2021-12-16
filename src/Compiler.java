@@ -17,6 +17,11 @@ public class Compiler {
         IRGenerator irGenerator = new IRGenerator(ASTtree);
         ArrayList<IRCode> irList = irGenerator.generate(1);
 
+        if (true/*false*/) {
+            Optimizer optimizer = new Optimizer(irList);
+            irList = optimizer.optimize();
+        }
+
         MIPSTranslator mipsTranslator = new MIPSTranslator(irList);
         mipsTranslator.tomips(1);
     }

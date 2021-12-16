@@ -21,6 +21,9 @@ public class Symbol {
 
     Symbol next; // pointer to the next entry in the symbolTable bucket list
 
+    //优化时，找回定义处位置用，标记ir的index
+    private int irindex;
+
     //以下为mips使用内容
     private SymbolTable.Scope scope;
     public final int spBaseHex = 0x7fffeffc;
@@ -99,6 +102,10 @@ public class Symbol {
         return global;
     }
 
+    public int getIrindex(){
+        return irindex;
+    }
+
     //Not Get
 
     public void addFuncReturnType(Parser.TYPE type) {
@@ -148,6 +155,10 @@ public class Symbol {
 
     public void setGlobal(boolean global) {
         this.global = global;
+    }
+
+    public void setIrindex(int irindex) {
+        this.irindex = irindex;
     }
 
     //其他函数
