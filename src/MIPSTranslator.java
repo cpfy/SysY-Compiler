@@ -741,8 +741,8 @@ public class MIPSTranslator {
 
                 if (offsetType.equals("num")) {    //offset = 数字
                     int offsetnum = offset.getNum();
-                    add("li $" + tmpregname + ", " + offsetnum * 4);     //需要乘以4!!!
-                    add("sw $v0, Global_" + arrayname + "($" + tmpregname + ")");   //与oper1主要区别lw变成sw
+                    //add("li $" + tmpregname + ", " + );     //需要乘以4!!!
+                    add("sw $v0, Global_" + arrayname + "+" + offsetnum * 4);   //与oper1主要区别lw变成sw
 
                 } else {    //offset = var变量
                     //该函数：将任意variable加载到指定寄存器，oper1、2、dest等均可用
@@ -1289,8 +1289,8 @@ public class MIPSTranslator {
                     String tmpregname = register.getRegisterNameFromNo(tmpregno);   //申请临时寄存器
 
                     if (offsetType.equals("num")) {    //offset = 数字
-                        add("li $" + tmpregname + ", " + offset.getNum() * 4);    //！！！需要乘以4，省一步sll
-                        add("lw $" + regForOper1 + ", Global_" + arrayname + "($" + tmpregname + ")");
+                        //add("li $" + tmpregname + ", " + );    //！！！需要乘以4，省一步sll
+                        add("lw $" + regForOper1 + ", Global_" + arrayname + "+" + offset.getNum() * 4);
 
                     } else {    //offset = var变量
                         String offsetregname = loadWordOfAnyVariableToRegName(offset);   //todo 存疑
@@ -1428,8 +1428,8 @@ public class MIPSTranslator {
 
                 if (offsetType.equals("num")) {    //offset = 数字
                     int offsetnum = offset.getNum();
-                    add("li $" + tmpregname + ", " + offsetnum * 4);     //需要乘以4!!!
-                    add("sw $" + regForOper1 + ", Global_" + arrayname + "($" + tmpregname + ")");   //与oper1主要区别lw变成sw
+                    //add("li $" + tmpregname + ", " + offsetnum * 4);     //需要乘以4!!!
+                    add("sw $" + regForOper1 + ", Global_" + arrayname + "+" + offsetnum * 4);   //与oper1主要区别lw变成sw
 
                 } else {    //offset = var变量
                     //该函数：将任意variable加载到指定寄存器，oper1、2、dest等均可用
@@ -2214,22 +2214,25 @@ public class MIPSTranslator {
         return op0reg;
     }
 
-    boolean calcu100 = false;
+    //boolean calcu100 = false;
 
     private void MultOptimize(String dreg, String op1reg, int num) {
         if (num == 100) {
-            if (calcu100) {
-                add("move $" + dreg + ", $a0");
+            /*if (calcu100) {
+                //add("move $" + dreg + ", $a0");
             }
             //add("div $t1, $t1");
-            else {
-                add("li $v1, " + num);
-                add("mult $" + op1reg + ", $v1");
-                add("mflo $" + dreg);
+            else {*/
 
-                add("mflo $a0");
-                calcu100 = true;
-            }
+            add("bnez $a0, multoptend");
+
+            add("li $v1, " + num);
+            add("mult $" + op1reg + ", $v1");
+            add("mflo $" + dreg);
+            add("mflo $a0");
+
+            add("multoptend:");
+
             return;
         }
 
