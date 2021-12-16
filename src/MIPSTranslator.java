@@ -30,6 +30,9 @@ public class MIPSTranslator {
     private boolean infuncdef = false;
     private boolean inmain = false;     //放到global主要用于main函数return 0时的判断
 
+    private int divoptcount = 1;
+
+
     public MIPSTranslator(ArrayList<IRCode> irList) {
         this.irList = irList;
         this.mipsList = new ArrayList<>();
@@ -87,6 +90,11 @@ public class MIPSTranslator {
                 if (code.getType().equals("note") && code.getRawstr().equals("#Start FuncDecl")) {
                     infuncdef = true;
                     add(".text");
+
+                    DivMShL msl = ChooseMultiplier(5, 31);
+                    long m = msl.m_high;
+                    add("li $a1, " + m);
+
                     add(tab + "j main");
                 }
             }
@@ -1222,10 +1230,15 @@ public class MIPSTranslator {
                     MultOptimize(dreg, op1reg, num);
                     break;
                 case "/":
-                    DivOptimize(dreg, op1reg, num, reverse);
+                    DivOptimize(dreg, op1reg, num, reverse, code.getScope());
                     break;
                 case "%":
-                    ModOptimize(dreg, op1reg, num, reverse);
+                    /*if (num == 5) {
+                        DivMShL msl = ChooseMultiplier(5, 31);
+                        long m = msl.m_high;
+                        add("li $a1, " + m);
+                    }*/
+                    ModOptimize(dreg, op1reg, num, reverse, code.getScope());
                     break;
             }
             /*register.freeRegister(oper1);*/
@@ -2295,7 +2308,7 @@ public class MIPSTranslator {
     }
 
     //除法优化
-    private void DivOptimize(String dreg, String op1reg, int d, boolean reverse) {
+    private void DivOptimize(String dreg, String op1reg, int d, boolean reverse, SymbolTable.Scope scope) {
         /* add("li $v1, " + num);
         add("div $" + op1reg + ", $v1");
         add("mflo $" + dreg);*/ //除法？狗都不用？
@@ -2325,28 +2338,66 @@ public class MIPSTranslator {
                 add("sra $" + dreg + ", $" + dreg + ", " + mi);
 
             } else if (m < Math.pow(2, 31)) {  // q = SRA(MULSH(m, n), shpost) − XSIGN(n)
-                add("li $v1, " + m);
-                add("mult $" + op1reg + ", $v1");
-                add("mfhi $" + dreg);
-                add("sra $" + dreg + ", $" + dreg + ", " + sh_post);
+                /*if (operationInWhileScope(scope)) {
+                    add("bnez $a1, divoptend" + divoptcount);
 
-                add("slti $v1, $" + op1reg + ", 0");    //若x<0, v1 = 1
-                add("add $" + dreg + ", $" + dreg + ", $v1");
+
+                    add("li $v1, " + m);
+                    add("mult $" + op1reg + ", $v1");
+                    add("mfhi $" + dreg);
+                    add("sra $" + dreg + ", $" + dreg + ", " + sh_post);
+
+                    add("slti $v1, $" + op1reg + ", 0");    //若x<0, v1 = 1
+                    add("add $" + dreg + ", $" + dreg + ", $v1");
+
+
+                    add("move $a1, " + dreg);
+
+                } else*/
+                {
+                    add("li $v1, " + m);
+                    add("mult $" + op1reg + ", $v1");
+                    add("mfhi $" + dreg);
+                    add("sra $" + dreg + ", $" + dreg + ", " + sh_post);
+
+                    add("slti $v1, $" + op1reg + ", 0");    //若x<0, v1 = 1
+                    add("add $" + dreg + ", $" + dreg + ", $v1");
+                }
 
             } else {    //q = SRA(n + MULSH(m − 2^N, n), shpost) − XSIGN(n)
-                add("li $v1, " + (int) (m - Math.pow(2, 32)));
-                add("mult $" + op1reg + ", $v1");
-                add("mfhi $" + dreg);
-                add("add $" + dreg + ", $" + dreg + ", $" + op1reg);
-                add("sra $" + dreg + ", $" + dreg + ", " + sh_post);
+                /*if (operationInWhileScope(scope)) {
+                    add("bnez $a2, divoptend" + divoptcount);
 
-                add("slti $v1, $" + op1reg + ", 0");    //若x<0, v1 = 1
-                add("add $" + dreg + ", $" + dreg + ", $v1");
+
+                    add("li $v1, " + (int) (m - Math.pow(2, 32)));
+                    add("mult $" + op1reg + ", $v1");
+                    add("mfhi $" + dreg);
+                    add("add $" + dreg + ", $" + dreg + ", $" + op1reg);
+                    add("sra $" + dreg + ", $" + dreg + ", " + sh_post);
+
+                    add("slti $v1, $" + op1reg + ", 0");    //若x<0, v1 = 1
+                    add("add $" + dreg + ", $" + dreg + ", $v1");
+
+
+                    add("move $a2, " + dreg);
+                } else*/
+                {
+                    add("li $v1, " + (int) (m - Math.pow(2, 32)));
+                    add("mult $" + op1reg + ", $v1");
+                    add("mfhi $" + dreg);
+                    add("add $" + dreg + ", $" + dreg + ", $" + op1reg);
+                    add("sra $" + dreg + ", $" + dreg + ", " + sh_post);
+
+                    add("slti $v1, $" + op1reg + ", 0");    //若x<0, v1 = 1
+                    add("add $" + dreg + ", $" + dreg + ", $v1");
+                }
+                //add("divoptend:");
             }
 
             if (d < 0) {
                 add("sub $" + dreg + ", $zero, $" + dreg);
             }
+
         }
     }
 
@@ -2367,7 +2418,7 @@ public class MIPSTranslator {
     }
 
     //取余数优化: a % b 翻译为 a - a / b * b
-    private void ModOptimize(String dreg, String op1reg, int d, boolean reverse) {
+    private void ModOptimize(String dreg, String op1reg, int d, boolean reverse, SymbolTable.Scope scope) {
         if (reverse) {
             if (d == 0) {
                 add("li $" + dreg + ", 0");
@@ -2383,15 +2434,95 @@ public class MIPSTranslator {
                 add("li $" + dreg + ", 0");
 
             } else {
-                DivOptimize(dreg, op1reg, d, reverse);    //不能用"v1"当dreg！
+                if (operationInWhileScope(scope) && d == 5) {
 
-                add("li $v1, " + d);
-                add("mult $" + dreg + ", $v1");
-                add("mflo $v1");
-                add("sub $" + dreg + ", $" + op1reg + ", $v1");
+                    DivOptimizeFive(dreg, op1reg, d);    //不能用"v1"当dreg！
+
+                    /*//优化前
+                    add("li $v1, " + d);
+                    add("mult $" + dreg + ", $v1");
+                    add("mflo $v1");
+                    add("sub $" + dreg + ", $" + op1reg + ", $v1");*/
+
+                    add("sll $v1, $" + dreg + ", 2");
+                    add("add $" + dreg + ", $" + dreg + ", $v1");
+                    add("sub $" + dreg + ", $" + op1reg + ", $" + dreg);
+
+
+
+                    //【废方案1】
+                    /*add("li $a2, 1");
+                    add("div $zero, $a2");
+
+                    add("bnez $a1, divoptend" + divoptcount);
+                    add("blt $a1, 440348, divoptend" + divoptcount);  //70%
+                    */
+
+                    //DivOptimize(dreg, op1reg, d, reverse, scope);    //不能用"v1"当dreg！
+
+
+
+                    //【废方案2】
+                    //add("move $a1, " + dreg);
+                    //add("j divoptjumpout" + divoptcount);
+
+                    //add("divoptend" + divoptcount + ":");
+                    //add("sll $a1, $a1, 2");
+                    //add("addi $a1, $a1, 1");
+
+
+                    /*add("blt $a1, 5, divoptsub" + divoptcount);
+                    add("addi $a1, $a1, -5");
+                    add("divoptsub" + divoptcount + ":");
+                    add("move $" + dreg + ", $a1");
+                    add("divoptjumpout" + divoptcount + ":");
+                    divoptcount++;*/
+
+                } else {
+                    DivOptimize(dreg, op1reg, d, reverse, scope);    //不能用"v1"当dreg！
+
+                    add("li $v1, " + d);
+                    add("mult $" + dreg + ", $v1");
+                    add("mflo $v1");
+                    add("sub $" + dreg + ", $" + op1reg + ", $v1");
+                }
             }
         }
     }
 
+    //判断在while内
+    private boolean operationInWhileScope(SymbolTable.Scope scope) {
+        SymbolTable.Scope curscope = scope;
+        if (curscope.type != null && curscope.type.equals("while")) {
+            return true;
+        }
+        while (curscope.father != null) {
+            curscope = curscope.father;
+            if (curscope.type != null && curscope.type.equals("while")) {
+                return true;
+            }
+        }
+        return false;
+    }
 
+    //除法优化
+    private void DivOptimizeFive(String dreg, String op1reg, int d) {
+        DivMShL msl = ChooseMultiplier(Math.abs(d), 31);
+        long m = msl.m_high;
+        int sh_post = msl.sh_post;
+
+        if (m < Math.pow(2, 31)) {  // q = SRA(MULSH(m, n), shpost) − XSIGN(n)
+
+            //inthis
+
+            //add("li $v1, " + m);
+            add("mult $" + op1reg + ", $a1");
+            add("mfhi $" + dreg);
+            add("sra $" + dreg + ", $" + dreg + ", " + sh_post);
+
+            add("slti $v1, $" + op1reg + ", 0");    //若x<0, v1 = 1
+            add("add $" + dreg + ", $" + dreg + ", $v1");
+
+        }
+    }
 }
