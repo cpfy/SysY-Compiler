@@ -170,6 +170,10 @@ public class Optimizer {
     }
 
     private boolean scanUseToScopeEndFromIndex(Symbol symbol, SymbolTable.Scope scope, int fromindex) {
+        if (symbol.getIsArray()) {    //数组不管
+            return true;
+        }
+
         int nextindex = fromindex + 1;
         ArrayList<SymbolTable.Scope> scopeList = new ArrayList<>();
         scopeList.add(scope);

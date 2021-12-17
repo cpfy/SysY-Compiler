@@ -31,6 +31,7 @@ public class MIPSTranslator {
     private boolean inmain = false;     //放到global主要用于main函数return 0时的判断
 
     private int divoptcount = 1;
+    //private boolean testf3 = false;
 
 
     public MIPSTranslator(ArrayList<IRCode> irList) {
@@ -1162,6 +1163,10 @@ public class MIPSTranslator {
                 register.freeRegister(oper2);     //理论上需要判定活跃性，或是否为tmp
             }
 
+            if (dest.isKindofsymbol()) {
+                register.freeRegister(dest);
+            }
+
         } else if ((type1.equals("var") && type2.equals("num")) || (type1.equals("num") && type2.equals("var"))) {
 
             boolean reverse = false;
@@ -1249,6 +1254,10 @@ public class MIPSTranslator {
                 register.freeRegister(oper1);     //理论上需要判定活跃性，或是否为tmp
             }
 
+            if (dest.isKindofsymbol()) {
+                register.freeRegister(dest);
+            }
+
         } else {    //两个均为数字
             int num;
             switch (operator) {
@@ -1272,6 +1281,10 @@ public class MIPSTranslator {
                     num = oper1.getNum() % oper2.getNum();
                     add("li $" + dreg + ", " + num);
                     break;
+            }
+
+            if (dest.isKindofsymbol()) {
+                register.freeRegister(dest);
             }
         }
     }
@@ -1558,6 +1571,11 @@ public class MIPSTranslator {
 
         register.freeRegister(oper1);     //理论上需要判定活跃性，或是否为tmp
         //todo 也许需要free offset的reg
+
+        if (dest.isKindofsymbol() /*|| code.releaseDest && !testf3*/) {
+            register.freeRegister(dest);
+        }
+
     }
 
     private void addAssignRet(IRCode code) {
@@ -2236,15 +2254,19 @@ public class MIPSTranslator {
             }
             //add("div $t1, $t1");
             else {*/
+            //testf3 = true;
 
-            add("bnez $a0, multoptend");
+            add("bnez $a0, multoptend3");
 
             add("li $v1, " + num);
             add("mult $" + op1reg + ", $v1");
             add("mflo $" + dreg);
             add("mflo $a0");
 
-            add("multoptend:");
+            //add("j multopt3jumpout");
+            add("multoptend3:");
+            //add("move $" + dreg + ", $a0");
+            //add("multopt3jumpout:");
 
             return;
         }
@@ -2436,6 +2458,8 @@ public class MIPSTranslator {
             } else {
                 if (operationInWhileScope(scope) && d == 5) {
 
+                    //testf3 = true;
+
                     DivOptimizeFive(dreg, op1reg, d);    //不能用"v1"当dreg！
 
                     /*//优化前
@@ -2449,7 +2473,6 @@ public class MIPSTranslator {
                     add("sub $" + dreg + ", $" + op1reg + ", $" + dreg);
 
 
-
                     //【废方案1】
                     /*add("li $a2, 1");
                     add("div $zero, $a2");
@@ -2459,7 +2482,6 @@ public class MIPSTranslator {
                     */
 
                     //DivOptimize(dreg, op1reg, d, reverse, scope);    //不能用"v1"当dreg！
-
 
 
                     //【废方案2】
@@ -2525,4 +2547,12 @@ public class MIPSTranslator {
 
         }
     }
+
+    //p效果没有
+    /*private void resetSpNeedToMoveToZero() {
+        if (spneedtomove != 0) {
+            add("addi $sp, $sp, " + (-spneedtomove) + tab + "#reset spneedtomove");
+            spneedtomove = 0;
+        }
+    }*/
 }

@@ -34,6 +34,8 @@ public class IRCode {
     public boolean deleted = false;
     public int startindex = -1;
 
+    public boolean releaseDest = false;
+
     //public boolean processjump = false;     //True表示jump时需处理inblockoffset,仅当break、continue时使用
 
     //todo 分类包括：note,label

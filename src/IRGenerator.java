@@ -124,7 +124,10 @@ public class IRGenerator {
                     intInitLval.setSymbol(symbol);
                     intInitLval.setiskindofsymbolTrue();  //todo 此处不可调用parseIdent？
 
-                    createIRCode("assign2", intInitLval, intinitvar);
+                    //createIRCode("assign2", intInitLval, intinitvar);
+                    IRCode ir = new IRCode("assign2", intInitLval, intinitvar);
+                    //ir.releaseDest = true;  //释放dest
+                    ir4init(ir);
                 }
 
             } else {
@@ -195,7 +198,11 @@ public class IRGenerator {
                         arrElementInitLval.setSymbol(symbol);
                         arrElementInitLval.setiskindofsymbolTrue();
 
-                        createIRCode("assign2", arrElementInitLval, arrElementInitvar);
+                        //createIRCode("assign2", arrElementInitLval, arrElementInitvar);
+
+                        IRCode ir = new IRCode("assign2", arrElementInitLval, arrElementInitvar);
+                        ir.releaseDest = true;  //释放dest
+                        ir4init(ir);
                     }
                 } else {
                     for (int i = 0; i < dimennum1; i++) {
@@ -208,7 +215,11 @@ public class IRGenerator {
                             arrElementInitLval.setSymbol(symbol);
                             arrElementInitLval.setiskindofsymbolTrue();
 
-                            createIRCode("assign2", arrElementInitLval, arrElementInitvar);
+                            //createIRCode("assign2", arrElementInitLval, arrElementInitvar);
+
+                            IRCode ir = new IRCode("assign2", arrElementInitLval, arrElementInitvar);
+                            ir.releaseDest = true;  //释放dest
+                            ir4init(ir);
                         }
                     }
                 }
