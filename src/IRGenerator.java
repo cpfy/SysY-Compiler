@@ -888,11 +888,13 @@ public class IRGenerator {
                     //暂时不管assignGlobal系列，assign2等处理
                     return tmpvar;
                 }
+                return null;
+
+            } else {
+                //无用函数扫掉
+                System.out.println("Don't Call Func: " + funcname);
+                return null;    //todo viod类型函数返回值
             }
-
-            //无用函数扫掉
-
-            return null;    //todo viod类型函数返回值
 
         } else {
             System.err.println("IRGenerator / parseIdent() : ??? what kind = " + kind);

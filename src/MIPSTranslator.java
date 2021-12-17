@@ -45,6 +45,9 @@ public class MIPSTranslator {
     public void tomips(int mipsOutput) {
         mipsGenerate();
 
+        MIPSOptimizer mipsoptmizer = new MIPSOptimizer(mipsList);
+        mipsList = mipsoptmizer.optim();
+
         if (mipsOutput == 1) {
             try {
                 writefile("mips.txt");
@@ -1054,7 +1057,9 @@ public class MIPSTranslator {
         String type1 = oper1.getType();
         String type2 = oper2.getType();
 
+        //if (dest.getSymbol() == null) {     //temp类型的var才分
         String dreg = searchRegName(dest);
+
 
         if (type1.equals("var") && type2.equals("var")) {
             String op1reg = "null_reg!!";
@@ -1544,8 +1549,12 @@ public class MIPSTranslator {
         } else if (typeDest.equals("var")) {
             //todo 需要处理函数局部变量和全局变量的问题【答】不用，oper1处理好了，存在了regForoper1中【大谬】可能赋值Global
 
-            String regForDest = searchRegName(dest);
-            add("move $" + regForDest + ", $" + regForOper1);   //全局变量存此寄存器，后续释放可能有问题
+            if (!dest.isKindofsymbol()) {     //tenp类型才分dest寄存器
+                String regForDest = searchRegName(dest);
+                add("move $" + regForDest + ", $" + regForOper1);   //全局变量存此寄存器，后续释放可能有问题
+            }/* else {
+                System.out.println("Not move when: " + code.getRawstr());
+            }*/
 
             if (dest.isKindofsymbol()) {    //不优化
                 Symbol destsymbol = dest.getSymbol();
@@ -1759,7 +1768,14 @@ public class MIPSTranslator {
 
             case "note":
                 if (code.getIRstring().equals("#end a func")) {
-                    add("addi $sp, $sp, " + infuncoffset); //注意回复sp指针！处理无return的函数情况
+                    //add("addi $sp, $sp, " + infuncoffset); //注意回复sp指针！处理无return的函数情况
+
+                    if (infuncoffset == 0) {
+                        add("#addi $sp, $sp, 0");
+                    } else {
+                        add("addi $sp, $sp, " + infuncoffset); //注意回复sp指针！处理无return的函数情况
+                    }
+
                     add("jr $ra");  //主要防止void且空返回值函数情况
                     add("");
 
@@ -1786,7 +1802,14 @@ public class MIPSTranslator {
         }
 
         if (code.voidreturn) {  //为空返回值的类型
-            add("addi $sp, $sp, " + infuncoffset);
+            //add("addi $sp, $sp, " + infuncoffset);
+
+            if (infuncoffset == 0) {
+                add("#addi $sp, $sp, 0");
+            } else {
+                add("addi $sp, $sp, " + infuncoffset); //注意回复sp指针！处理无return的函数情况
+            }
+
             add("jr $ra");
             add("");
             return;
@@ -1828,7 +1851,12 @@ public class MIPSTranslator {
             //
         }
 
-        add("addi $sp, $sp, " + infuncoffset);
+        if (infuncoffset == 0) {
+            add("#addi $sp, $sp, 0");
+        } else {
+            add("addi $sp, $sp, " + infuncoffset);
+        }
+
         add("jr $ra");
         add("");
     }
