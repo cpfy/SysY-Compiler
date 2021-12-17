@@ -106,6 +106,7 @@ public class Symbol {
         return irindex;
     }
 
+
     //Not Get
 
     public void addFuncReturnType(Parser.TYPE type) {

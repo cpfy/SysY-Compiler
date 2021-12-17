@@ -20,6 +20,12 @@ public class IRGenerator {
     private Symbol curFunc;     //符号表时用，标记当前正在处理的函数
     private boolean noneedopenblock = false;    //while、if等自建scope时标记不需再block
 
+    private ArrayList<Symbol> badfuncList = new ArrayList();  //无用函数集合
+    private boolean assignGlobalVar = false;
+    private boolean assignparaArray = false;
+    private boolean hasprintstmt = false;
+
+
     public IRGenerator(Node ASTtree) {
         this.tree = ASTtree;
     }
@@ -125,6 +131,9 @@ public class IRGenerator {
                     intInitLval.setiskindofsymbolTrue();  //todo 此处不可调用parseIdent？
 
                     //createIRCode("assign2", intInitLval, intinitvar);
+
+                    checkIfAssignGlobalValue(intInitLval);      //检查是否赋值global
+
                     IRCode ir = new IRCode("assign2", intInitLval, intinitvar);
                     //ir.releaseDest = true;  //释放dest
                     ir4init(ir);
@@ -200,6 +209,8 @@ public class IRGenerator {
 
                         //createIRCode("assign2", arrElementInitLval, arrElementInitvar);
 
+                        checkIfAssignGlobalValue(arrElementInitLval);      //检查是否赋值global
+
                         IRCode ir = new IRCode("assign2", arrElementInitLval, arrElementInitvar);
                         ir.releaseDest = true;  //释放dest
                         ir4init(ir);
@@ -216,6 +227,8 @@ public class IRGenerator {
                             arrElementInitLval.setiskindofsymbolTrue();
 
                             //createIRCode("assign2", arrElementInitLval, arrElementInitvar);
+
+                            checkIfAssignGlobalValue(arrElementInitLval);      //检查是否赋值global
 
                             IRCode ir = new IRCode("assign2", arrElementInitLval, arrElementInitvar);
                             ir.releaseDest = true;  //释放dest
@@ -242,6 +255,11 @@ public class IRGenerator {
         String funcname = ident.getName();
         String functype = ident.getKind();
 
+        //优化 初始化
+        assignGlobalVar = false;
+        assignparaArray = false;
+        hasprintstmt = false;
+
         //第1步，先制作符号表
         Symbol funcSymbol = new Symbol(funcname, Parser.TYPE.F);
         curFunc = funcSymbol;
@@ -266,6 +284,20 @@ public class IRGenerator {
         createIRCode("note", "#end a func");
 
         SymbolTable.closeScope();
+
+        //判断函数有p用？
+        if (funcSymbol.getFuncReturnType() == Parser.TYPE.V) {
+            if (!assignGlobalVar && !assignparaArray && !hasprintstmt) {
+                badfuncList.add(funcSymbol);
+            }
+
+        } /*else if (funcSymbol.getFuncReturnType() == Parser.TYPE.I) {
+            if (!assignGlobalArray && !assignparaArray && !assignGlobalInt) {
+                badfuncList.add(funcSymbol);
+            }
+        }*/     //判断常值返回略麻烦
+
+        curFunc = null;
     }
 
     private void parseFuncFParam(Node n) {
@@ -421,6 +453,7 @@ public class IRGenerator {
                 }
                 break;
             case "Printf":
+                hasprintstmt = true;
                 parsePrintf(n);
                 break;
             case "Block":
@@ -443,12 +476,27 @@ public class IRGenerator {
                 break;
             case "Assign_getint":
                 Variable getintexp = parseLVal(n.getLeft());    //需要LVal而不是Exp处理，因为可能得sw
+                /*if (getintexp.isKindofsymbol()) {
+                    Symbol sb = getintexp.getSymbol();
+                    if (sb.isGlobal()) {
+                        assignGlobalVar = true;
+
+                    } else if (curFunc != null && sb.getIsArray() && curFunc.getParalist().contains(sb)) {
+                        assignparaArray = true;
+                    }
+                }*/
+
+                checkIfAssignGlobalValue(getintexp);
+
                 createIRCode("getint", getintexp);
                 break;
             case "Assign_value":
                 startindex = irList.size();     //初始化ir赋值语句起始位置
                 Variable lval = parseLVal(n.getLeft()); //todo 本质上就是parseIdent？【答】不一样，如不需要出临时变量t2
                 Variable exp = parseExp(n.getRight());
+
+                checkIfAssignGlobalValue(lval);      //检查是否赋值global
+
                 createIRCode("assign2", lval, exp);
                 break;
             case "Exp":
@@ -724,6 +772,7 @@ public class IRGenerator {
 
                     } else {
                         Variable tmpvar = getTmpVar();
+                        //checkIfAssignGlobalValue(lval);      //检查是否赋值global
                         createIRCode("assign", "-", tmpvar, leftexp, rightexp);
                         return tmpvar;
                     }
@@ -797,6 +846,9 @@ public class IRGenerator {
                 startindex = irList.size();     //初始化ir赋值语句起始位置
                 Variable name_and_index = parseArrayVisit(n);
                 Variable tmpvar = getTmpVar();
+
+                //checkIfAssignGlobalValue(lval);      //检查是否赋值global
+
                 createIRCode("assign2", tmpvar, name_and_index);
                 return tmpvar;
             }
@@ -807,33 +859,39 @@ public class IRGenerator {
 
             Symbol func = SymbolTable.lookupFullTable(funcname, Parser.TYPE.F, SymbolTable.foreverGlobalScope);
 
-            if (rparams != null) {      //函数有参数则push
-                for (int i = 0; i < rparams.getLeafs().size(); i++) {
-                    Node para = rparams.getLeafs().get(i);
+            if (!badfuncList.contains(func)) {
+                if (rparams != null) {      //函数有参数则push
+                    for (int i = 0; i < rparams.getLeafs().size(); i++) {
+                        Node para = rparams.getLeafs().get(i);
 
-                    Symbol fparami = func.getParalist().get(i); //函数的第i个参数类型
-                    int arraydimen = fparami.getArrayDimen();
+                        Symbol fparami = func.getParalist().get(i); //函数的第i个参数类型
+                        int arraydimen = fparami.getArrayDimen();
 
-                    if (fparami.getIsArray()) {       //如果是array类型的函数参数
-                        Variable paraexp = parseArrayExp(para, arraydimen);       //需返回array类型
-                        createIRCode("push", paraexp);
+                        if (fparami.getIsArray()) {       //如果是array类型的函数参数
+                            Variable paraexp = parseArrayExp(para, arraydimen);       //需返回array类型
+                            createIRCode("push", paraexp);
 
-                    } else {
-                        Variable paraexp = parseExp(para);      //正常的var类型exp
-                        createIRCode("push", paraexp);
+                        } else {
+                            Variable paraexp = parseExp(para);      //正常的var类型exp
+                            createIRCode("push", paraexp);
+                        }
                     }
+                }
+
+                IRCode ir = new IRCode("call", funcname);   //补充了把func的Symbol塞入call的ircode
+                ir.setSymbol(func);
+                ir4init(ir);
+
+                if (func.getFuncReturnType() != null && func.getFuncReturnType() != Parser.TYPE.V) {
+                    Variable tmpvar = getTmpVar();
+                    createIRCode("assign_ret", tmpvar);
+                    //暂时不管assignGlobal系列，assign2等处理
+                    return tmpvar;
                 }
             }
 
-            IRCode ir = new IRCode("call", funcname);   //补充了把func的Symbol塞入call的ircode
-            ir.setSymbol(func);
-            ir4init(ir);
+            //无用函数扫掉
 
-            if (func.getFuncReturnType() != null && func.getFuncReturnType() != Parser.TYPE.V) {
-                Variable tmpvar = getTmpVar();
-                createIRCode("assign_ret", tmpvar);
-                return tmpvar;
-            }
             return null;    //todo viod类型函数返回值
 
         } else {
@@ -897,6 +955,7 @@ public class IRGenerator {
                     int t1num = var_x.getNum() * arraydimen2;
                     Variable t1 = new Variable("num", t1num);
                     Variable offset = getTmpVar();
+                    //checkIfAssignGlobalValue(lval);      //检查是否赋值global
                     createIRCode("assign", "+", offset, var_y, t1);
                     Variable retVar = new Variable("array", name, offset);
                     retVar.setSymbol(array);    //只设置symbol，但不可kindofSymbol=True
@@ -1122,6 +1181,20 @@ public class IRGenerator {
             Variable tmpvar = getTmpVar();
             createIRCode("assign", op, tmpvar, leftexp, rightexp);
             return tmpvar;
+        }
+    }
+
+    //检查、更新assignglobal系列
+    private void checkIfAssignGlobalValue(Variable var) {
+        //if (var.isKindofsymbol()) {
+        if (var.getSymbol() != null) {
+            Symbol sb = var.getSymbol();
+            if (sb.isGlobal()) {
+                assignGlobalVar = true;
+
+            } else if (curFunc != null && sb.getIsArray() && curFunc.getParalist().contains(sb)) {
+                assignparaArray = true;
+            }
         }
     }
 }

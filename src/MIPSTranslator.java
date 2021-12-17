@@ -94,7 +94,7 @@ public class MIPSTranslator {
 
                     DivMShL msl = ChooseMultiplier(5, 31);
                     long m = msl.m_high;
-                    add("li $a1, " + m);
+                    add(tab + "li $a1, " + m);
 
                     add(tab + "j main");
                 }
